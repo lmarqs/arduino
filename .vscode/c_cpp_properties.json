@@ -4,9 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "~/Arduino/libraries/RoboCore_-_Vespa/src",
-                "~/.arduino15/packages/esp32/hardware/esp32/1.0.6/cores/esp32",
-                "~/.arduino15/packages/esp32/hardware/esp32/1.0.6/libraries"
+                "./.arduino15/user/libraries/RoboCore_-_Vespa/src",
+                "./.arduino15/data/packages/esp32/hardware/esp32/1.0.6/cores/esp32",
+                "./.arduino15/data/packages/esp32/hardware/esp32/1.0.6/libraries"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
