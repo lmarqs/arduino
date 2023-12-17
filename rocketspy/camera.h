@@ -1,27 +1,27 @@
-#include <Arduino.h>
 #include <esp_camera.h>
 #define CAMERA_MODEL_AI_THINKER
 #include "esp_camera_pins.h"
 #include "esp_camera_setup.h"
 
+using RocketSpyCameraPictureReader = std::function<void(camera_fb_t *)>;
 
-class CameraPictureReader
+class RocketSpyCamera
 {
-public:
-  virtual void receivePicture(camera_fb_t *fb);
+private:
+  sensor_t *sensor;
 
-  virtual void readPicture();
-};
-
-class ESP32Camera
-{
 public:
   void begin()
   {
-    esp_camera_setup();
+    sensor = esp_camera_setup();
+
+    if (sensor)
+    {
+      sensor->set_framesize(sensor, FRAMESIZE_VGA);
+    }
   }
 
-  void sendPicture(CameraPictureReader *reader)
+  void capture(RocketSpyCameraPictureReader reader)
   {
     camera_fb_t *fb = esp_camera_fb_get();
 
@@ -31,10 +31,8 @@ public:
       return;
     }
 
-    reader->receivePicture(fb);
+    reader(fb);
 
     esp_camera_fb_return(fb);
-
-    reader->readPicture();
   }
 };
