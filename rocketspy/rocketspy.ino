@@ -10,7 +10,7 @@ RocketSpyCamera Camera;
 
 const RocketSpyWebServerHandler indexHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
 {
-  res->send(HTTPD_200, HTTPD_TYPE_TEXT, reinterpret_cast<char *>(rocketspy_index_html), rocketspy_index_html_len);
+  res->send(HTTPD_200, HTTPD_TYPE_TEXT, (const char *)rocketspy_index_html, rocketspy_index_html_len);
 };
 
 const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
@@ -25,8 +25,6 @@ const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, Rocket
 
   RocketSpyCameraPictureReader reader = [res, part_buf](camera_fb_t *fb)
   {
-    res->reset();
-
     res->write("\r\n--123456789000000000000987654321\r\n", 36);
 
     size_t hlen = snprintf((char *)part_buf, 128, "Content-Type: image/jpeg\r\nContent-Length: %u\r\nX-Timestamp: %d.%06d\r\n\r\n", fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
@@ -35,7 +33,7 @@ const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, Rocket
     res->write((const char *)fb->buf, fb->len);
   };
 
-  while (true)
+  while (res->isConnected())
   {
     Camera.capture(reader);
   }
