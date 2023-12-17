@@ -14,11 +14,6 @@ public:
   void begin()
   {
     sensor = esp_camera_setup();
-
-    if (sensor)
-    {
-      sensor->set_framesize(sensor, FRAMESIZE_VGA);
-    }
   }
 
   void capture(RocketSpyCameraPictureReader reader)

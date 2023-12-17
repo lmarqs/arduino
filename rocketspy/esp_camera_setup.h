@@ -26,10 +26,10 @@ sensor_t *esp_camera_setup()
   config.xclk_freq_hz = 16000000;
   config.pixel_format = PIXFORMAT_JPEG;
 
-  config.jpeg_quality = 12;
+  config.jpeg_quality = 30;
   config.fb_count = 1;
   config.fb_location = CAMERA_FB_IN_DRAM;
-  config.frame_size = FRAMESIZE_240X240;
+  config.frame_size = FRAMESIZE_HVGA;
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
 
   if (psramFound())
