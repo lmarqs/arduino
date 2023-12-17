@@ -4,13 +4,26 @@
 #include "camera.h"
 #include "webserver.h"
 #include "index.html.h"
+#include "index.js.h"
+#include "index.css.h"
 
 RocketSpyWebServer WebServer;
+RocketSpyWebServer StreamServer;
 RocketSpyCamera Camera;
 
-const RocketSpyWebServerHandler indexHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
+const RocketSpyWebServerHandler indexHtmlHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
 {
-  res->send(HTTPD_200, HTTPD_TYPE_TEXT, (const char *)rocketspy_index_html, rocketspy_index_html_len);
+  res->send(HTTPD_200, "text/html", (const char *)__index_html, __index_html_len);
+};
+
+const RocketSpyWebServerHandler indexCssHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
+{
+  res->send(HTTPD_200, "text/css", (const char *)__index_css, __index_css_len);
+};
+
+const RocketSpyWebServerHandler indexJsHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
+{
+  res->send(HTTPD_200, "text/javascript", (const char *)__index_js, __index_js_len);
 };
 
 const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
@@ -18,7 +31,6 @@ const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, Rocket
   res->setType("multipart/x-mixed-replace;boundary=123456789000000000000987654321");
 
   res->setHeader("Access-Control-Allow-Origin", "*");
-
   res->setHeader("X-Framerate", "60");
 
   char *part_buf[128];
@@ -49,11 +61,15 @@ void setup(void)
 
   Camera.begin();
 
-  WebServer.begin();
+  WebServer.begin(80);
 
-  WebServer.on("/", HTTP_GET, indexHandler);
+  WebServer.on("/", HTTP_GET, indexHtmlHandler);
+  WebServer.on("/index.css", HTTP_GET, indexCssHandler);
+  WebServer.on("/index.js", HTTP_GET, indexJsHandler);
 
-  WebServer.on("/stream", HTTP_GET, streamHandler);
+  StreamServer.begin(81);
+
+  StreamServer.on("/stream", HTTP_GET, streamHandler);
 
   Serial.println("Started");
 }

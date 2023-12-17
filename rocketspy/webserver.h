@@ -102,9 +102,12 @@ private:
   httpd_handle_t httpd = NULL;
 
 public:
-  void begin()
+  void begin(int port)
   {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    config.server_port = port;
+    config.ctrl_port = 32000 + port;
 
     httpd_start(&httpd, &config);
   }
