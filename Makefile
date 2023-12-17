@@ -16,7 +16,7 @@ install-dependencies:
 run: hexdump compile upload monitor
 
 hexdump:
-	find $(SKETCH) -type f -not -name '*.ino' -not -name '*.h' | awk '{print "xxd --include " $$0 " > " $$0 ".h"}' | sh
+	find $(SKETCH) -type f -not -name '*.ino' -not -name '*.h' -not -name '*.c' -not -name '*.cpp' -not -name '.skip.*' | awk '{print "xxd --include " $$0 " > " $$0 ".h"}' | sh
 
 compile:
 	arduino-cli compile $(SKETCH) --build-path .build/$(SKETCH) --fqbn $(FBQN) --config-file arduino-cli.yaml
