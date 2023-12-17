@@ -41,6 +41,11 @@ public:
     err = ESP_FAIL;
   }
 
+  bool isConnected()
+  {
+    return err == ESP_OK;
+  }
+
   void setStatus(const char *status)
   {
     if (err != ESP_OK)
@@ -102,8 +107,6 @@ public:
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     httpd_start(&httpd, &config);
-
-    Serial.println("HTTP webserver started");
   }
 
   void on(const char *uri, const httpd_method_t method, const RocketSpyWebServerHandler handler)
