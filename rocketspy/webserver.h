@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#define CONFIG_HTTPD_WS_SUPPORT
 #include <esp_http_server.h>
 
 class RocketSpyRequest
@@ -10,6 +11,53 @@ public:
   RocketSpyRequest(httpd_req_t *req)
   {
     this->req = req;
+  }
+
+  int getMethod()
+  {
+    return req->method;
+  }
+
+  void receiveFrame()
+  {
+    httpd_ws_frame_t frame;
+
+    memset(&frame, 0, sizeof(httpd_ws_frame_t));
+
+    frame.type = HTTPD_WS_TYPE_TEXT;
+
+    esp_err_t ret = httpd_ws_recv_frame(req, &frame, 0);
+
+    if (ret != ESP_OK || !frame.len)
+    {
+      return;
+    }
+
+    frame.payload = (uint8_t *)calloc(1, frame.len + 1);
+
+    if (!frame.payload)
+    {
+      return;
+    }
+
+    ret = httpd_ws_recv_frame(req, &frame, frame.len);
+
+    if (ret == ESP_OK)
+    {
+      Serial.write(frame.payload, frame.len);
+
+      httpd_ws_frame_t response;
+
+      memset(&response, 0, sizeof(httpd_ws_frame_t));
+
+      response.type = HTTPD_WS_TYPE_TEXT;
+      response.payload = (uint8_t *)"Hello World!";
+      response.len = strlen("Hello World!");
+
+      httpd_ws_send_frame(req, &response);
+    }
+
+    free(frame.payload);
   }
 };
 

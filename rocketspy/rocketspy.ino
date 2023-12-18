@@ -1,9 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WebServer.h>
 #include <http_parser.h>
+#include <wheelchair.h>
 #include "camera.h"
 #include "webserver.h"
-#include "wheelchair.h"
 #include "index.html.h"
 #include "index.js.h"
 #include "index.css.h"
@@ -12,6 +13,12 @@ RocketSpyWebServer WebServer;
 RocketSpyWebServer StreamServer;
 RocketSpyCamera Camera;
 L298PWheelChair WheelChair(12, 13, 14, 15);
+
+const RocketSpyWebServerHandler echoHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
+{
+  Serial.println("Echo received");
+  req->receiveFrame();
+};
 
 const RocketSpyWebServerHandler indexHtmlHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
 {
@@ -68,6 +75,7 @@ void setup(void)
   WebServer.on("/", HTTP_GET, indexHtmlHandler);
   WebServer.on("/index.css", HTTP_GET, indexCssHandler);
   WebServer.on("/index.js", HTTP_GET, indexJsHandler);
+  WebServer.on("/echo", HTTP_GET, echoHandler);
 
   StreamServer.begin(81);
 
