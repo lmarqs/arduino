@@ -3,6 +3,7 @@
 #include <http_parser.h>
 #include "camera.h"
 #include "webserver.h"
+#include "wheelchair.h"
 #include "index.html.h"
 #include "index.js.h"
 #include "index.css.h"
@@ -10,6 +11,7 @@
 RocketSpyWebServer WebServer;
 RocketSpyWebServer StreamServer;
 RocketSpyCamera Camera;
+L298PWheelChair WheelChair(12, 13, 14, 15);
 
 const RocketSpyWebServerHandler indexHtmlHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
 {
@@ -71,10 +73,42 @@ void setup(void)
 
   StreamServer.on("/stream", HTTP_GET, streamHandler);
 
+  WheelChair.begin();
+
   Serial.println("Started");
 }
 
 void loop()
 {
+  for (int i = 0; i <= 100; i += 10)
+  {
+    WheelChair.move(i, 0);
+    delay(100);
+  }
+
+  delay(1000);
+
+  for (int i = 0; i >= -100; i += -10)
+  {
+    WheelChair.move(i, 0);
+    delay(100);
+  }
+
+  delay(1000);
+
+  for (int i = 0; i <= 100; i += 10)
+  {
+    WheelChair.move(0, i);
+    delay(100);
+  }
+
+  delay(1000);
+
+  for (int i = 0; i >= -100; i += -10)
+  {
+    WheelChair.move(0, i);
+    delay(100);
+  }
+
   delay(1000);
 }
