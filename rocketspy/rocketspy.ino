@@ -1,42 +1,53 @@
 #include <Arduino.h>
-#include <WiFi.h>
 #include <WebServer.h>
+#include <WiFi.h>
 #include <http_parser.h>
-#include <wheelchair.h>
-#include "camera.h"
-#include "webserver.h"
+#include <this_esp_camera.h>
+#include <this_esp_web_server.h>
+#include <this_wheelchair.h>
+
+#include "index.css.h"
 #include "index.html.h"
 #include "index.js.h"
-#include "index.css.h"
 
-RocketSpyWebServer WebServer;
-RocketSpyWebServer StreamServer;
-RocketSpyCamera Camera;
+EspWebServer WebServer;
+EspWebServer StreamServer;
+EspCamera Camera;
 L298PWheelChair WheelChair(12, 13, 14, 15);
 
-const RocketSpyWebServerHandler echoHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
-{
+const EspWebServerHandler echoHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   Serial.println("Echo received");
-  req->receiveFrame();
+
+  EspWebServerWsFrameProcessor fp = [res](httpd_ws_frame_t *reqFrame) {
+    Serial.write(reqFrame->payload, reqFrame->len);
+
+    httpd_ws_frame_t resFrame;
+
+    memset(&resFrame, 0, sizeof(httpd_ws_frame_t));
+
+    resFrame.type = HTTPD_WS_TYPE_TEXT;
+    resFrame.payload = (uint8_t *)"Hello World!";
+    resFrame.len = strlen("Hello World!");
+
+    res->sendWsFrame(&resFrame);
+  };
+
+  req->receiveWsFrame(fp);
 };
 
-const RocketSpyWebServerHandler indexHtmlHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
-{
-  res->send(HTTPD_200, "text/html", (const char *)__index_html, __index_html_len);
+const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  res->send(HTTPD_200, "text/html", (char *)__index_html, __index_html_len);
 };
 
-const RocketSpyWebServerHandler indexCssHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
-{
-  res->send(HTTPD_200, "text/css", (const char *)__index_css, __index_css_len);
+const EspWebServerHandler indexCssHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  res->send(HTTPD_200, "text/css", (char *)__index_css, __index_css_len);
 };
 
-const RocketSpyWebServerHandler indexJsHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
-{
-  res->send(HTTPD_200, "text/javascript", (const char *)__index_js, __index_js_len);
+const EspWebServerHandler indexJsHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  res->send(HTTPD_200, "text/javascript", (char *)__index_js, __index_js_len);
 };
 
-const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, RocketSpyResponse *res)
-{
+const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   res->setType("multipart/x-mixed-replace;boundary=123456789000000000000987654321");
 
   res->setHeader("Access-Control-Allow-Origin", "*");
@@ -44,24 +55,24 @@ const RocketSpyWebServerHandler streamHandler = [](RocketSpyRequest *req, Rocket
 
   char *part_buf[128];
 
-  RocketSpyCameraPictureReader reader = [res, part_buf](camera_fb_t *fb)
-  {
+  EspCameraPictureReader reader = [res, part_buf](camera_fb_t *fb) {
     res->write("\r\n--123456789000000000000987654321\r\n", 36);
 
-    size_t hlen = snprintf((char *)part_buf, 128, "Content-Type: image/jpeg\r\nContent-Length: %u\r\nX-Timestamp: %d.%06d\r\n\r\n", fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
+    size_t hlen = snprintf((char *)part_buf, 128,
+                           "Content-Type: image/jpeg\r\nContent-Length: "
+                           "%u\r\nX-Timestamp: %d.%06d\r\n\r\n",
+                           fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
 
-    res->write((const char *)part_buf, hlen);
-    res->write((const char *)fb->buf, fb->len);
+    res->write((char *)part_buf, hlen);
+    res->write((char *)fb->buf, fb->len);
   };
 
-  while (res->isConnected())
-  {
+  while (res->isConnected()) {
     Camera.capture(reader);
   }
 };
 
-void setup(void)
-{
+void setup(void) {
   Serial.begin(9600);
 
   Serial.println("\nStarting...");
@@ -86,34 +97,29 @@ void setup(void)
   Serial.println("Started");
 }
 
-void loop()
-{
-  for (int i = 0; i <= 100; i += 10)
-  {
+void loop() {
+  for (int i = 0; i <= 100; i += 10) {
     WheelChair.move(i, 0);
     delay(100);
   }
 
   delay(1000);
 
-  for (int i = 0; i >= -100; i += -10)
-  {
+  for (int i = 0; i >= -100; i += -10) {
     WheelChair.move(i, 0);
     delay(100);
   }
 
   delay(1000);
 
-  for (int i = 0; i <= 100; i += 10)
-  {
+  for (int i = 0; i <= 100; i += 10) {
     WheelChair.move(0, i);
     delay(100);
   }
 
   delay(1000);
 
-  for (int i = 0; i >= -100; i += -10)
-  {
+  for (int i = 0; i >= -100; i += -10) {
     WheelChair.move(0, i);
     delay(100);
   }

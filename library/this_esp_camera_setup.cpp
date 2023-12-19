@@ -1,8 +1,10 @@
 #include <Arduino.h>
 #include <esp_camera.h>
 
-sensor_t *esp_camera_setup()
-{
+#define CAMERA_MODEL_AI_THINKER
+#include "this_esp_camera_pins.h"
+
+sensor_t *esp_camera_setup() {
   camera_config_t config;
 
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -32,8 +34,7 @@ sensor_t *esp_camera_setup()
   config.frame_size = FRAMESIZE_HVGA;
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
 
-  if (psramFound())
-  {
+  if (psramFound()) {
     config.jpeg_quality = 10;
     config.fb_count = 2;
     config.fb_location = CAMERA_FB_IN_PSRAM;
@@ -48,16 +49,14 @@ sensor_t *esp_camera_setup()
 
   esp_err_t err = esp_camera_init(&config);
 
-  if (err != ESP_OK)
-  {
+  if (err != ESP_OK) {
     Serial.printf("Camera init failed with error 0x%x\n", err);
     return NULL;
   }
 
   sensor_t *sensor = esp_camera_sensor_get();
 
-  if (sensor->id.PID == OV3660_PID)
-  {
+  if (sensor->id.PID == OV3660_PID) {
     sensor->set_vflip(sensor, 1);
     sensor->set_brightness(sensor, 1);
     sensor->set_saturation(sensor, -2);
