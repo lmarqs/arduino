@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-#include "WheelChair.h
+#include <this_wheelchair.h>
 
-L298PWheelChair Car(25, 23, 19, 18);
+L298WheelChair Car(25, 23, 19, 18);
 
 void setup()
 {
