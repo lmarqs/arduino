@@ -5,11 +5,14 @@ update-index:
 	arduino-cli lib  update-index --config-file arduino-cli.yaml
 
 install-dependencies:
-	arduino-cli core install esp32:esp32@2.0.14 --config-file arduino-cli.yaml
-	arduino-cli core install esp32-bluepad32:esp32@3.10.3 --config-file arduino-cli.yaml
 	arduino-cli core install arduino:avr@1.8.6 --config-file arduino-cli.yaml
-	arduino-cli lib install --git-url https://github.com/RoboCore/RoboCore_Vespa.git#v1.1.0 --config-file arduino-cli.yaml
+	arduino-cli core install digistump:avr@1.6.7 --config-file arduino-cli.yaml
+	arduino-cli core install esp32-bluepad32:esp32@3.10.2 --config-file arduino-cli.yaml
+	arduino-cli core install esp32:esp32@2.0.14 --config-file arduino-cli.yaml
 	arduino-cli lib install IRremote@4.2.0 --config-file arduino-cli.yaml
+	arduino-cli lib install LiquidCrystal@1.0.7 --config-file arduino-cli.yaml
+	arduino-cli lib install 'RoboCore - Vespa@1.1.0' --config-file arduino-cli.yaml
+	arduino-cli lib install Servo@1.2.1 --config-file arduino-cli.yaml
 
 run: compile upload monitor
 
