@@ -2,46 +2,80 @@
 
 #include <Arduino.h>
 
-L298PWheelChair::L298PWheelChair(byte pwmA, byte dirA, byte pwmB, byte dirB) {
-  this->pwmA = pwmA;
-  this->dirA = dirA;
-  this->pwmB = pwmB, this->dirB = dirB;
+L298WheelChair::L298WheelChair(byte pwmA, byte dirA, byte pwmB, byte dirB) {
+  this->isUsing6Pins = false;
+  this->enA = pwmA;
+  this->in1 = in1;
+  this->in3 = in3;
+  this->enB = pwmB;
 }
 
-void L298PWheelChair::begin() {
+L298WheelChair::L298WheelChair(byte enA, byte in1, byte in2, byte in3, byte in4, byte enB) {
+  this->isUsing6Pins = true;
+  this->enA = enA;
+  this->in1 = in1;
+  this->in2 = in2;
+  this->in3 = in3;
+  this->in4 = in4;
+  this->enB = enB;
+}
+
+void L298WheelChair::begin() {
   setPinModes();
 
   setPinsOff();
 }
 
-void L298PWheelChair::setPinModes() {
-  pinMode(dirA, OUTPUT);
-  pinMode(dirB, OUTPUT);
-  pinMode(pwmA, OUTPUT);
-  pinMode(pwmA, OUTPUT);
+void L298WheelChair::setPinModes() {
+  pinMode(enA, OUTPUT);
+  pinMode(enB, OUTPUT);
+  pinMode(in1, OUTPUT);
+  pinMode(in3, OUTPUT);
+
+  if (isUsing6Pins) {
+    pinMode(in2, OUTPUT);
+    pinMode(in4, OUTPUT);
+  }
 }
 
-void L298PWheelChair::setPinsOff() {
-  digitalWrite(dirA, LOW);
-  digitalWrite(dirB, LOW);
-  digitalWrite(pwmA, LOW);
-  digitalWrite(pwmB, LOW);
+void L298WheelChair::setPinsOff() {
+  digitalWrite(enA, LOW);
+  digitalWrite(enB, LOW);
+  digitalWrite(in1, LOW);
+  digitalWrite(in3, LOW);
+
+  if (isUsing6Pins) {
+    digitalWrite(in2, LOW);
+    digitalWrite(in4, LOW);
+  }
 }
 
-void L298PWheelChair::move(int speedA, int speedB) {
+void L298WheelChair::move(int speedA, int speedB) {
   if (speedA >= 0) {
-    digitalWrite(dirA, HIGH);
-    analogWrite(pwmA, speedA * 255 / 100);
+    digitalWrite(in1, HIGH);
+    if (isUsing6Pins) {
+      digitalWrite(in2, LOW);
+    }
+    analogWrite(enA, speedA * 255 / 100);
   } else {
-    digitalWrite(dirA, LOW);
-    analogWrite(pwmA, -speedA * 255 / 100);
+    digitalWrite(in1, LOW);
+    if (isUsing6Pins) {
+      digitalWrite(in2, HIGH);
+    }
+    analogWrite(enA, -speedA * 255 / 100);
   }
 
   if (speedB >= 0) {
-    digitalWrite(dirB, HIGH);
-    analogWrite(pwmB, speedB * 255 / 100);
+    digitalWrite(in3, HIGH);
+    if (isUsing6Pins) {
+      digitalWrite(in4, LOW);
+    }
+    analogWrite(enB, speedB * 255 / 100);
   } else {
-    digitalWrite(dirB, LOW);
-    analogWrite(pwmB, -speedB * 255 / 100);
+    digitalWrite(in3, LOW);
+    if (isUsing6Pins) {
+      digitalWrite(in4, HIGH);
+    }
+    analogWrite(enB, -speedB * 255 / 100);
   }
 }
