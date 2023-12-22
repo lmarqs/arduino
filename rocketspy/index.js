@@ -1,22 +1,156 @@
-(function () {
-  const host = "192.168.4.1";
+"use strict";
 
-  const stream = document.getElementById("stream");
+const WEB_SERVER_HOST = "192.168.4.1";
 
-  stream.src = `http://${host}:81/stream`;
+class VideoStreamFromWebServer {
+  constructor(el, host) {
+    this.host = host;
+    this.el = el;
+  }
 
-  let ws = new WebSocket(`ws://${host}/input`);
+  begin() {
+    this.el.src = `http://${this.host}:81/stream`;
+  }
+}
 
-  const joy = new JoyStick("joystick");
+class InputWebSocket {
+  constructor(host) {
+    this.host = host;
+    this.ws = null;
+  }
 
-  setInterval(() => {
-    if (ws.OPEN) {
-      const payload = new Uint8Array([parseInt(joy.getX()), parseInt(joy.getY())]);
+  begin() {
+    this.ws = new WebSocket(`ws://${this.host}/input`);
+  }
 
-      ws.send(payload.buffer);
+  send(wheelChair) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const buffer = new Uint8Array([
+        wheelChair.leftSpeed,
+        wheelChair.rightSpeed,
+      ]);
+
+      this.ws.send(buffer);
     }
-  }, 100);
+  }
+}
+
+class WheelChair {
+  constructor(el) {
+    this.leftSlider = document.createElement("input");
+    this.rightSlider = document.createElement("input");
+    this.leftSpeed = 0;
+    this.rightSpeed = 0;
+
+    el.appendChild(this.leftSlider);
+    el.appendChild(this.rightSlider);
+  }
+
+  begin() {
+    this.leftSlider.type = "range";
+    this.leftSlider.readOnly = true;
+    this.leftSlider.max = 100;
+    this.leftSlider.min = -100;
+    this.rightSlider.type = "range";
+    this.rightSlider.readOnly = true;
+    this.rightSlider.max = 100;
+    this.rightSlider.min = -100;
+    this.render();
+  }
+
+  move(leftSpeed, rightSpeed) {
+    const acc = 10;
+
+    this.leftSpeed += Math.max(-acc, Math.min(Math.round(leftSpeed - this.leftSpeed), acc));
+    this.rightSpeed += Math.max(-acc, Math.min(Math.round(rightSpeed - this.rightSpeed), acc));
+
+    this.render();
+  }
+
+  render() {
+    this.leftSlider.value = this.leftSpeed;
+    this.rightSlider.value = this.rightSpeed;
+  }
+}
+
+const joystick = new JoyStick(document.getElementById("joystick"));
+
+const stream = new VideoStreamFromWebServer(
+  document.getElementById("stream"),
+  WEB_SERVER_HOST,
+);
+
+const inputWebSocket = new InputWebSocket(WEB_SERVER_HOST);
+
+const wheelChair = new WheelChair(document.getElementById("wheel-chair"));
+
+function main() {
+  stream.begin();
+  joystick.begin();
+  inputWebSocket.begin();
+  wheelChair.begin();
+}
+
+function loop() {
+  const [leftSpeed, rightSpeed] = getSpeedFromUserInput();
+
+  wheelChair.move(leftSpeed, rightSpeed);
+
+  inputWebSocket.send(wheelChair);
+}
+
+; (() => {
+  main();
+  setInterval(loop, 50);
 })();
+
+
+function getSpeedFromUserInput() {
+  const gamepad = navigator.getGamepads().filter(Boolean)[0];
+
+  if (gamepad) {
+    return getSpeedFromGamepad(gamepad);
+  }
+
+  return [0, 0];
+}
+
+function getSpeedFromGamepad(gamepad) {
+  let [leftStickX, leftStickY, rightStickX, rightStickY] = gamepad.axes.map(axis => Math.round(axis * 100));
+
+  const [a, b, x, y, l1, r1, l2, r2, select, start, l3, r3, up, down, left, right] = gamepad.buttons;
+
+  if (l1.pressed) {
+    return [-30, 30];
+  }
+
+  if (r1.pressed) {
+    return [30, -30];
+  }
+
+  if (a.pressed) {
+    rightStickY = -100;
+  }
+
+  if (b.pressed) {
+    rightStickY = 100;
+  }
+
+  return [
+    -rightStickY * (100 + Math.min(0, leftStickX)) / 100,
+    -rightStickY * (100 - Math.max(0, leftStickX)) / 100
+  ];
+}
+
+function convertAxesToSpeed(x, y) {
+  const speed = Math.sqrt(x * x + y * y);
+  const angle = Math.atan2(y, x);
+
+  const speedL = speed * Math.cos(angle - Math.PI / 4);
+  const speedR = speed * Math.sin(angle - Math.PI / 4);
+
+  return [speedL, speedR];
+}
 
 function throttle(fn, waitTime) {
   let timer = null
@@ -46,8 +180,7 @@ function throttle(fn, waitTime) {
  * @author       : Roberto D'Amico (Bobboteck)
  */
 function JoyStick(container, parameters, callback) {
-  let StickStatus =
-  {
+  let state = {
     xPosition: 0,
     yPosition: 0,
     x: 0,
@@ -55,10 +188,10 @@ function JoyStick(container, parameters, callback) {
     cardinalDirection: "C"
   };
 
+
   parameters = parameters || {};
 
-  var title = (typeof parameters.title === "undefined" ? "joystick" : parameters.title),
-    width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
+  var width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
     height = (typeof parameters.height === "undefined" ? 0 : parameters.height),
     internalFillColor = (typeof parameters.internalFillColor === "undefined" ? "#00AA00" : parameters.internalFillColor),
     internalLineWidth = (typeof parameters.internalLineWidth === "undefined" ? 2 : parameters.internalLineWidth),
@@ -67,38 +200,25 @@ function JoyStick(container, parameters, callback) {
     externalStrokeColor = (typeof parameters.externalStrokeColor === "undefined" ? "#008000" : parameters.externalStrokeColor),
     autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter);
 
-  callback = callback || function (StickStatus) { };
-
-  // Create Canvas element and add it in the Container object
-  var objContainer = document.getElementById(container);
-
-  // Fixing Unable to preventDefault inside passive event listener due to target being treated as passive in Chrome [Thanks to https://github.com/artisticfox8 for this suggestion]
-  objContainer.style.touchAction = "none";
+  callback = callback || function (state) { };
 
   var canvas = document.createElement("canvas");
-  canvas.id = title;
-  if (width === 0) { width = objContainer.clientWidth; }
-  if (height === 0) { height = objContainer.clientHeight; }
-  canvas.width = width;
-  canvas.height = height;
-  objContainer.appendChild(canvas);
+
   var context = canvas.getContext("2d");
 
-  var pressed = 0; // Bool - 1=Yes - 0=No
-  var circumference = 2 * Math.PI;
-  var internalRadius = (canvas.width - ((canvas.width / 2) + 10)) / 2;
-  var maxMoveStick = internalRadius + 5;
-  var externalRadius = internalRadius + 30;
-  var centerX = canvas.width / 2;
-  var centerY = canvas.height / 2;
-  var directionHorizontalLimitPos = canvas.width / 10;
-  var directionHorizontalLimitNeg = directionHorizontalLimitPos * -1;
-  var directionVerticalLimitPos = canvas.height / 10;
-  var directionVerticalLimitNeg = directionVerticalLimitPos * -1;
-
-  // Used to save current position of stick
-  var movedX = centerX;
-  var movedY = centerY;
+  var pressed,
+    circumference,
+    internalRadius,
+    maxMoveStick,
+    externalRadius,
+    centerX,
+    centerY,
+    directionHorizontalLimitPos,
+    directionHorizontalLimitNeg,
+    directionVerticalLimitPos,
+    directionVerticalLimitNeg,
+    movedX,
+    movedY;
 
   // Check if the device support the touch or not
   if ("ontouchstart" in document.documentElement) {
@@ -111,9 +231,6 @@ function JoyStick(container, parameters, callback) {
     document.addEventListener("mousemove", onMouseMove, false);
     document.addEventListener("mouseup", onMouseUp, false);
   }
-  // Draw the object
-  drawExternal();
-  drawInternal();
 
   /******************************************************
    * Private methods
@@ -158,20 +275,19 @@ function JoyStick(container, parameters, callback) {
    */
   let touchId = null;
   function onTouchStart(event) {
-    pressed = 1;
+    pressed = true;
     touchId = event.targetTouches[0].identifier;
   }
 
   function onTouchMove(event) {
-    if (pressed === 1 && event.targetTouches[0].target === canvas) {
+    if (pressed && event.targetTouches[0].target === canvas) {
       movedX = event.targetTouches[0].pageX;
       movedY = event.targetTouches[0].pageY;
       // Manage offset
       if (canvas.offsetParent.tagName.toUpperCase() === "BODY") {
         movedX -= canvas.offsetLeft;
         movedY -= canvas.offsetTop;
-      }
-      else {
+      } else {
         movedX -= canvas.offsetParent.offsetLeft;
         movedY -= canvas.offsetParent.offsetTop;
       }
@@ -182,19 +298,19 @@ function JoyStick(container, parameters, callback) {
       drawInternal();
 
       // Set attribute of callback
-      StickStatus.xPosition = movedX;
-      StickStatus.yPosition = movedY;
-      StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-      StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-      StickStatus.cardinalDirection = getCardinalDirection();
-      callback(StickStatus);
+      state.xPosition = movedX;
+      state.yPosition = movedY;
+      state.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+      state.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+      state.cardinalDirection = getCardinalDirection();
+      callback(state);
     }
   }
 
   function onTouchEnd(event) {
     if (event.changedTouches[0].identifier !== touchId) return;
 
-    pressed = 0;
+    pressed = false;
     // If required reset position store variable
     if (autoReturnToCenter) {
       movedX = centerX;
@@ -207,24 +323,25 @@ function JoyStick(container, parameters, callback) {
     drawInternal();
 
     // Set attribute of callback
-    StickStatus.xPosition = movedX;
-    StickStatus.yPosition = movedY;
-    StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-    StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-    StickStatus.cardinalDirection = getCardinalDirection();
-    callback(StickStatus);
+    state.xPosition = movedX;
+    state.yPosition = movedY;
+    state.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+    state.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+    state.cardinalDirection = getCardinalDirection();
+
+    callback(state);
   }
 
   /**
    * @desc Events for manage mouse
    */
   function onMouseDown(event) {
-    pressed = 1;
+    pressed = true;
   }
 
   /* To simplify this code there was a new experimental feature here: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/offsetX , but it present only in Mouse case not metod presents in Touch case :-( */
   function onMouseMove(event) {
-    if (pressed === 1) {
+    if (pressed) {
       movedX = event.pageX;
       movedY = event.pageY;
       // Manage offset
@@ -243,17 +360,17 @@ function JoyStick(container, parameters, callback) {
       drawInternal();
 
       // Set attribute of callback
-      StickStatus.xPosition = movedX;
-      StickStatus.yPosition = movedY;
-      StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-      StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-      StickStatus.cardinalDirection = getCardinalDirection();
-      callback(StickStatus);
+      state.xPosition = movedX;
+      state.yPosition = movedY;
+      state.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+      state.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+      state.cardinalDirection = getCardinalDirection();
+      callback(state);
     }
   }
 
   function onMouseUp(event) {
-    pressed = 0;
+    pressed = false;
     // If required reset position store variable
     if (autoReturnToCenter) {
       movedX = centerX;
@@ -266,12 +383,12 @@ function JoyStick(container, parameters, callback) {
     drawInternal();
 
     // Set attribute of callback
-    StickStatus.xPosition = movedX;
-    StickStatus.yPosition = movedY;
-    StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
-    StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
-    StickStatus.cardinalDirection = getCardinalDirection();
-    callback(StickStatus);
+    state.xPosition = movedX;
+    state.yPosition = movedY;
+    state.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+    state.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+    state.cardinalDirection = getCardinalDirection();
+    callback(state);
   }
 
   function getCardinalDirection() {
@@ -312,6 +429,42 @@ function JoyStick(container, parameters, callback) {
   /******************************************************
    * Public methods
    *****************************************************/
+
+  this.begin = function () {
+    // Fixing Unable to preventDefault inside passive event listener due to target being treated as passive in Chrome [Thanks to https://github.com/artisticfox8 for this suggestion]
+    container.style.touchAction = "none";
+
+    container.appendChild(canvas);
+
+    if (!width) {
+      width = container.clientWidth;
+    }
+
+    if (!height) {
+      height = container.clientHeight;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+
+    pressed = false;
+    circumference = 2 * Math.PI;
+    internalRadius = (canvas.width - ((canvas.width / 2) + 10)) / 2;
+    maxMoveStick = internalRadius + 5;
+    externalRadius = internalRadius + 30;
+    centerX = canvas.width / 2;
+    centerY = canvas.height / 2;
+    directionHorizontalLimitPos = canvas.width / 10;
+    directionHorizontalLimitNeg = directionHorizontalLimitPos * -1;
+    directionVerticalLimitPos = canvas.height / 10;
+    directionVerticalLimitNeg = directionVerticalLimitPos * -1;
+
+    movedX = centerX;
+    movedY = centerX;
+
+    drawExternal();
+    drawInternal();
+  }
 
   /**
    * @desc The width of canvas
