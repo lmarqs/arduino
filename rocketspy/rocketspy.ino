@@ -15,24 +15,16 @@ EspWebServer StreamServer;
 EspCamera Camera;
 L298PWheelChair WheelChair(12, 13, 14, 15);
 
-const EspWebServerHandler echoHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  Serial.println("Echo received");
+const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  Serial.println("Input received");
 
-  EspWebServerWsFrameProcessor fp = [res](httpd_ws_frame_t *reqFrame) {
-    Serial.write(reqFrame->payload, reqFrame->len);
+  EspWebServerWsFrameProcessor processor = [res](httpd_ws_frame_t *frame) {
+    int8_t *payload = (int8_t *)frame->payload;
 
-    httpd_ws_frame_t resFrame;
-
-    memset(&resFrame, 0, sizeof(httpd_ws_frame_t));
-
-    resFrame.type = HTTPD_WS_TYPE_TEXT;
-    resFrame.payload = (uint8_t *)"Hello World!";
-    resFrame.len = strlen("Hello World!");
-
-    res->sendWsFrame(&resFrame);
+    WheelChair.move(payload[0], payload[1]);
   };
 
-  req->receiveWsFrame(fp);
+  req->receiveWsFrame(processor);
 };
 
 const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -72,7 +64,7 @@ const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebSer
   }
 };
 
-void setup(void) {
+void setup() {
   Serial.begin(9600);
 
   Serial.println("\nStarting...");
@@ -86,7 +78,7 @@ void setup(void) {
   WebServer.on("/", HTTP_GET, indexHtmlHandler);
   WebServer.on("/index.css", HTTP_GET, indexCssHandler);
   WebServer.on("/index.js", HTTP_GET, indexJsHandler);
-  WebServer.on("/echo", HTTP_GET, echoHandler);
+  WebServer.on("/input", HTTP_GET, inputHandler);
 
   StreamServer.begin(81);
 
@@ -98,31 +90,6 @@ void setup(void) {
 }
 
 void loop() {
-  for (int i = 0; i <= 100; i += 10) {
-    WheelChair.move(i, 0);
-    delay(100);
-  }
 
-  delay(1000);
-
-  for (int i = 0; i >= -100; i += -10) {
-    WheelChair.move(i, 0);
-    delay(100);
-  }
-
-  delay(1000);
-
-  for (int i = 0; i <= 100; i += 10) {
-    WheelChair.move(0, i);
-    delay(100);
-  }
-
-  delay(1000);
-
-  for (int i = 0; i >= -100; i += -10) {
-    WheelChair.move(0, i);
-    delay(100);
-  }
-
-  delay(1000);
+  delay(150);
 }
