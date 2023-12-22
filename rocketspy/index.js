@@ -1,32 +1,45 @@
-window.onload = () => {
+(function () {
   const host = "192.168.4.1";
 
   const stream = document.getElementById("stream");
 
   stream.src = `http://${host}:81/stream`;
 
-  const joy = new JoyStick("joystick", {}, function (data) {
-    console.log(data);
-    // joy1IinputPosX.value = stickData.xPosition;
-    // joy1InputPosY.value = stickData.yPosition;
-    // joy1Direzione.value = stickData.cardinalDirection;
-    // joy1X.value = stickData.x;
-    // joy1Y.value = stickData.y;
-  });
-  let ws = new WebSocket(`ws://${host}/echo`);
-  ws.binaryType = 'blob';
-  ws.onopen = function (event) { console.log("WebSocket is open now."); };
-  ws.onclose = function (event) { console.log("WebSocket is closed now."); };
-  ws.onmessage = function (event) {
-    console.log(event)
-    if (event.data instanceof Blob) {
-      console.log(URL.createObjectURL(event.data));
+  let ws = new WebSocket(`ws://${host}/input`);
+
+  const joy = new JoyStick("joystick");
+
+  setInterval(() => {
+    if (ws.OPEN) {
+      const payload = new Uint8Array([parseInt(joy.getX()), parseInt(joy.getY())]);
+
+      ws.send(payload.buffer);
+    }
+  }, 100);
+})();
+
+function throttle(fn, waitTime) {
+  let timer = null
+  let lastExec = null
+
+  return function () {
+    const context = this
+    const args = arguments
+
+    if (!lastExec) {
+      fn.apply(context, args)
+      lastExec = Date.now()
+    } else {
+      clearTimeout(timer)
+      timer = setTimeout(function () {
+        if ((Date.now() - lastExec) >= waitTime) {
+          fn.apply(context, args)
+          lastExec = Date.now()
+        }
+      }, waitTime - (Date.now() - lastExec))
     }
   }
-
-  ws.send(JSON.stringify({ type: "start" }));
-};
-
+}
 
 /*
  * Name          : joy.js
