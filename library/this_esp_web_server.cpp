@@ -97,7 +97,7 @@ void EspWebServerResponse::sendWsFrame(httpd_ws_frame_t *frame) {
     return;
   }
 
-  err = httpd_ws_send_frame(req, buf);
+  err = httpd_ws_send_frame(req, frame);
 }
 
 void EspWebServer::begin(int port) {
@@ -111,7 +111,9 @@ void EspWebServer::begin(int port) {
 
 void EspWebServer::on(char *uri, httpd_method_t method, EspWebServerHandler handler) {
   httpd_uri_t config;
-  config.uri = uri config.method = method;
+
+  config.uri = uri;
+  config.method = method;
 
   config.handler = [](httpd_req_t *r) -> esp_err_t {
     EspWebServerRequest req(r);
