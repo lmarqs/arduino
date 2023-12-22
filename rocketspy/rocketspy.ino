@@ -13,11 +13,9 @@
 EspWebServer WebServer;
 EspWebServer StreamServer;
 EspCamera Camera;
-L298PWheelChair WheelChair(12, 13, 14, 15);
+L298WheelChair WheelChair(12, 13, 15, 14, 2, 4);
 
 const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  Serial.println("Input received");
-
   EspWebServerWsFrameProcessor processor = [res](httpd_ws_frame_t *frame) {
     int8_t *payload = (int8_t *)frame->payload;
 
