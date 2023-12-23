@@ -19,15 +19,11 @@ L298WheelChair WheelChair(12, 13, 15, 14, 2, 4);
 
 const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   EspWebServerWsFrameProcessor processor = [res](httpd_ws_frame_t *frame) {
-    Serial.printf("Received: %d %d\n", frame->type, frame->len);
-
     if (frame->len != 3) {
       return;
     }
 
     int8_t *payload = (int8_t *)frame->payload;
-
-    Serial.printf("Received: %d %d %d\n", payload[0], payload[1], payload[2]);
 
     WheelChair.move(payload[0], payload[1]);
     CameraTilt.write(payload[2] * 170 / 100);
