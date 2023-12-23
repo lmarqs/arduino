@@ -3,8 +3,14 @@
   margin: 0;
 }
 
+label {
+  display: block;
+  margin-bottom: 1em;
+}
+
 #stream,
 #joystick,
+#camera-position,
 #wheel-chair {
   width: 320px;
   display: block;
@@ -27,3 +33,9 @@
   margin-bottom: 1em;
   margin-top: 1em;
 }
+
+#camera-position > * {
+  display: block;
+  width: 100%;
+}
+

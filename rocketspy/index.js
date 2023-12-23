@@ -59,10 +59,8 @@ class WheelChair {
   }
 
   move(leftSpeed, rightSpeed) {
-    const acc = 10;
-
-    this.leftSpeed += Math.max(-acc, Math.min(Math.round(leftSpeed - this.leftSpeed), acc));
-    this.rightSpeed += Math.max(-acc, Math.min(Math.round(rightSpeed - this.rightSpeed), acc));
+    this.leftSpeed = ease(this.leftSpeed, leftSpeed, 0.2);
+    this.rightSpeed = ease(this.rightSpeed, rightSpeed, 0.2);
 
     this.render();
   }
@@ -73,12 +71,37 @@ class WheelChair {
   }
 }
 
-const joystick = new JoyStick(document.getElementById("joystick"));
+class CameraPosition {
+  constructor(el) {
+    this.slider = document.createElement("input");
+    this.value = 0;
+
+    el.appendChild(this.slider);
+  }
+
+  begin() {
+    this.slider.type = "range";
+    this.slider.readOnly = true;
+    this.slider.max = 100;
+    this.slider.min = 0;
+
+    this.render();
+  }
+
+  render() {
+    this.slider.value = this.value;
+  }
+}
+
 
 const stream = new VideoStreamFromWebServer(
   document.getElementById("stream"),
   WEB_SERVER_HOST,
 );
+
+const joystick = new JoyStick(document.getElementById("joystick"));
+
+const cameraPosition = new CameraPosition(document.getElementById("camera-position"));
 
 const inputWebSocket = new InputWebSocket(WEB_SERVER_HOST);
 
@@ -87,6 +110,7 @@ const wheelChair = new WheelChair(document.getElementById("wheel-chair"));
 function main() {
   stream.begin();
   joystick.begin();
+  cameraPosition.begin();
   inputWebSocket.begin();
   wheelChair.begin();
 }
@@ -112,7 +136,11 @@ function getSpeedFromUserInput() {
     return getSpeedFromGamepad(gamepad);
   }
 
-  return [0, 0];
+  return getSpeedFromJoystick(joystick);
+}
+
+function getSpeedFromJoystick(joystick) {
+  return convertAxesToSpeed(joystick.getX(), -joystick.getY());
 }
 
 function getSpeedFromGamepad(gamepad) {
@@ -121,11 +149,11 @@ function getSpeedFromGamepad(gamepad) {
   const [a, b, x, y, l1, r1, l2, r2, select, start, l3, r3, up, down, left, right] = gamepad.buttons;
 
   if (l1.pressed) {
-    return [-30, 30];
+    return [-60, 60];
   }
 
   if (r1.pressed) {
-    return [30, -30];
+    return [60, -60];
   }
 
   if (a.pressed) {
@@ -136,20 +164,18 @@ function getSpeedFromGamepad(gamepad) {
     rightStickY = 100;
   }
 
-  return [
-    -rightStickY * (100 + Math.min(0, leftStickX)) / 100,
-    -rightStickY * (100 - Math.max(0, leftStickX)) / 100
-  ];
+  return convertAxesToSpeed(leftStickX, rightStickY);
 }
 
 function convertAxesToSpeed(x, y) {
-  const speed = Math.sqrt(x * x + y * y);
-  const angle = Math.atan2(y, x);
+  return [
+    -y * (100 + Math.min(0, x)) / 100,
+    -y * (100 - Math.max(0, x)) / 100
+  ];
+}
 
-  const speedL = speed * Math.cos(angle - Math.PI / 4);
-  const speedR = speed * Math.sin(angle - Math.PI / 4);
-
-  return [speedL, speedR];
+function ease(current, target, easing) {
+  return current + (target - current) * easing;
 }
 
 function throttle(fn, waitTime) {
