@@ -25,13 +25,13 @@ sensor_t *esp_camera_setup() {
   config.pin_sscb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 16000000;
+  config.xclk_freq_hz = 8000000;
   config.pixel_format = PIXFORMAT_JPEG;
 
-  config.jpeg_quality = 30;
+  config.jpeg_quality = 10;
   config.fb_count = 1;
   config.fb_location = CAMERA_FB_IN_DRAM;
-  config.frame_size = FRAMESIZE_HVGA;
+  config.frame_size = FRAMESIZE_QVGA;
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
 
   if (psramFound()) {
