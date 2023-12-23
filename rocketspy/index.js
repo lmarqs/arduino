@@ -1,6 +1,8 @@
 "use strict";
 
-const WEB_SERVER_HOST = "192.168.4.1";
+const WEB_SERVER_HOST = location.hostname === "localhost"
+  ? "192.168.4.1"
+  : location.host;
 
 class VideoStreamFromWebServer {
   constructor(el, host) {
@@ -25,7 +27,7 @@ class InputWebSocket {
 
   send(wheelChair, cameraPosition) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const buffer = new Uint8Array([
+      const { buffer } = new Uint8Array([
         wheelChair.leftSpeed,
         wheelChair.rightSpeed,
         cameraPosition.tilt,
@@ -72,10 +74,10 @@ class WheelChair {
   }
 }
 
-class CameraPosition {
+class Camera {
   constructor(el) {
     this.tiltSlider = document.createElement("input");
-    this.tilt = 0;
+    this.tilt = 100;
 
     el.appendChild(this.tiltSlider);
   }
@@ -85,8 +87,13 @@ class CameraPosition {
     this.tiltSlider.readOnly = true;
     this.tiltSlider.max = 100;
     this.tiltSlider.min = 0;
-    this.tiltSlider.onchange = (e) => this.tilt = parseInt(e.target.value);
+    this.tiltSlider.oninput = (e) => this.tilt = parseInt(e.target.value);
 
+    this.render();
+  }
+
+  move(tilt) {
+    this.tilt = Math.min(100, Math.max(0, this.tilt + tilt));
     this.render();
   }
 
@@ -95,7 +102,6 @@ class CameraPosition {
   }
 }
 
-
 const stream = new VideoStreamFromWebServer(
   document.getElementById("stream"),
   WEB_SERVER_HOST,
@@ -103,7 +109,7 @@ const stream = new VideoStreamFromWebServer(
 
 const joystick = new JoyStick(document.getElementById("joystick"));
 
-const cameraPosition = new CameraPosition(document.getElementById("camera-position"));
+const camera = new Camera(document.getElementById("camera-position"));
 
 const inputWebSocket = new InputWebSocket(WEB_SERVER_HOST);
 
@@ -112,17 +118,14 @@ const wheelChair = new WheelChair(document.getElementById("wheel-chair"));
 function main() {
   stream.begin();
   joystick.begin();
-  cameraPosition.begin();
-  inputWebSocket.begin();
+  camera.begin();
   wheelChair.begin();
+  inputWebSocket.begin();
 }
 
 function loop() {
-  const [leftSpeed, rightSpeed] = getSpeedFromUserInput();
-
-  wheelChair.move(leftSpeed, rightSpeed);
-
-  inputWebSocket.send(wheelChair, cameraPosition);
+  updateFromUserInput(joystick, wheelChair, camera);
+  inputWebSocket.send(wheelChair, camera);
 }
 
 ; (() => {
@@ -130,15 +133,28 @@ function loop() {
   setInterval(loop, 50);
 })();
 
-
-function getSpeedFromUserInput() {
+function updateFromUserInput(joystick, wheelChair, camera) {
   const gamepad = navigator.getGamepads().filter(Boolean)[0];
 
   if (gamepad) {
-    return getSpeedFromGamepad(gamepad);
+    wheelChair.move(...getSpeedFromGamepad(gamepad));
+    camera.move(...getCameraMovementFromGamepad(gamepad));
+  } else {
+    wheelChair.move(...getSpeedFromJoystick(joystick));
+  }
+}
+
+function getCameraMovementFromGamepad(gamepad) {
+  const up = gamepad.buttons[12];
+  const down = gamepad.buttons[13];
+
+  if (up.pressed) {
+    return [1];
   }
 
-  return getSpeedFromJoystick(joystick);
+  if (down.pressed) {
+    return [-1];
+  }
 }
 
 function getSpeedFromJoystick(joystick) {
@@ -151,11 +167,11 @@ function getSpeedFromGamepad(gamepad) {
   const [a, b, x, y, l1, r1, l2, r2, select, start, l3, r3, up, down, left, right] = gamepad.buttons;
 
   if (l1.pressed) {
-    return [-60, 60];
+    return [-80, 80];
   }
 
   if (r1.pressed) {
-    return [60, -60];
+    return [80, -80];
   }
 
   if (a.pressed) {

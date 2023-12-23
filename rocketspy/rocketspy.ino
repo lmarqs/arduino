@@ -19,11 +19,18 @@ L298WheelChair WheelChair(12, 13, 15, 14, 2, 4);
 
 const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   EspWebServerWsFrameProcessor processor = [res](httpd_ws_frame_t *frame) {
+    Serial.printf("Received: %d %d\n", frame->type, frame->len);
+
+    if (frame->len != 3) {
+      return;
+    }
+
     int8_t *payload = (int8_t *)frame->payload;
 
-    WheelChair.move(payload[0], payload[1]);
+    Serial.printf("Received: %d %d %d\n", payload[0], payload[1], payload[2]);
 
-    CameraTilt.write(payload[2]);
+    WheelChair.move(payload[0], payload[1]);
+    CameraTilt.write(payload[2] * 170 / 100);
   };
 
   req->receiveWsFrame(processor);
@@ -72,6 +79,13 @@ void setup() {
   Serial.println("\nStarting...");
 
   WiFi.softAP("rocketspy", "rocketspy");
+  // WiFi.begin("", "");
+  // WiFi.setSleep(false);
+
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(500);
+  //   Serial.print(".");
+  // }
 
   Camera.begin();
 
@@ -88,9 +102,11 @@ void setup() {
 
   WheelChair.begin();
 
-  CameraTilt.attach(3);
+  CameraTilt.attach(16);
 
-  Serial.println("Started");
+  Serial.print("Ready! Use 'http://");
+  Serial.print(WiFi.localIP());
+  Serial.println("' to connect");
 }
 
 void loop() { delay(150); }
