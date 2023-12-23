@@ -13,6 +13,7 @@ install-dependencies:
 	arduino-cli lib install LiquidCrystal@1.0.7 --config-file arduino-cli.yaml
 	arduino-cli lib install 'RoboCore - Vespa@1.1.0' --config-file arduino-cli.yaml
 	arduino-cli lib install Servo@1.2.1 --config-file arduino-cli.yaml
+	arduino-cli lib install ESP32Servo@1.1.1 --config-file arduino-cli.yaml
 
 run: compile upload monitor
 
