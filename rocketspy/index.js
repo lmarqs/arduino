@@ -23,11 +23,12 @@ class InputWebSocket {
     this.ws = new WebSocket(`ws://${this.host}/input`);
   }
 
-  send(wheelChair) {
+  send(wheelChair, cameraPosition) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const buffer = new Uint8Array([
         wheelChair.leftSpeed,
         wheelChair.rightSpeed,
+        cameraPosition.tilt,
       ]);
 
       this.ws.send(buffer);
@@ -73,23 +74,24 @@ class WheelChair {
 
 class CameraPosition {
   constructor(el) {
-    this.slider = document.createElement("input");
-    this.value = 0;
+    this.tiltSlider = document.createElement("input");
+    this.tilt = 0;
 
-    el.appendChild(this.slider);
+    el.appendChild(this.tiltSlider);
   }
 
   begin() {
-    this.slider.type = "range";
-    this.slider.readOnly = true;
-    this.slider.max = 100;
-    this.slider.min = 0;
+    this.tiltSlider.type = "range";
+    this.tiltSlider.readOnly = true;
+    this.tiltSlider.max = 100;
+    this.tiltSlider.min = 0;
+    this.tiltSlider.onchange = (e) => this.tilt = parseInt(e.target.value);
 
     this.render();
   }
 
   render() {
-    this.slider.value = this.value;
+    this.tiltSlider.value = this.tilt;
   }
 }
 
@@ -120,7 +122,7 @@ function loop() {
 
   wheelChair.move(leftSpeed, rightSpeed);
 
-  inputWebSocket.send(wheelChair);
+  inputWebSocket.send(wheelChair, cameraPosition);
 }
 
 ; (() => {

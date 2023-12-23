@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ESP32Servo.h>
 #include <WebServer.h>
 #include <WiFi.h>
 #include <http_parser.h>
@@ -13,6 +14,7 @@
 EspWebServer WebServer;
 EspWebServer StreamServer;
 EspCamera Camera;
+Servo CameraTilt;
 L298WheelChair WheelChair(12, 13, 15, 14, 2, 4);
 
 const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -20,6 +22,8 @@ const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServ
     int8_t *payload = (int8_t *)frame->payload;
 
     WheelChair.move(payload[0], payload[1]);
+
+    CameraTilt.write(payload[2]);
   };
 
   req->receiveWsFrame(processor);
@@ -84,10 +88,9 @@ void setup() {
 
   WheelChair.begin();
 
+  CameraTilt.attach(3);
+
   Serial.println("Started");
 }
 
-void loop() {
-
-  delay(150);
-}
+void loop() { delay(150); }
