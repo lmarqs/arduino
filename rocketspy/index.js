@@ -155,6 +155,8 @@ function getCameraMovementFromGamepad(gamepad) {
   if (down.pressed) {
     return [-1];
   }
+
+  return [0];
 }
 
 function getSpeedFromJoystick(joystick) {
