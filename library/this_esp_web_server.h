@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Arduino.h>
 #define CONFIG_HTTPD_WS_SUPPORT
 #include <esp_http_server.h>

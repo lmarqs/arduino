@@ -18,6 +18,7 @@
 // #define CAMERA_MODEL_ESP32S3_CAM_LCD
 // #define CAMERA_MODEL_DFRobot_FireBeetle2_ESP32S3 // Has PSRAM
 // #define CAMERA_MODEL_DFRobot_Romeo_ESP32S3 // Has PSRAM
+#pragma once
 
 #if defined(CAMERA_MODEL_WROVER_KIT)
 #define PWDN_GPIO_NUM    -1
