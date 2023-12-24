@@ -18,7 +18,7 @@ install-dependencies:
 run: compile upload monitor
 
 hexdump:
-	cd $(SKETCH); find . -type f -not -name '*.ino' -not -name '*.h' -not -name '*.c' -not -name '*.cpp' -not -name '.skip.*' -not -name '*.xxd' | awk '{print "xxd --include " $$0 " > " $$0 ".h"}' | sh
+	cd $(SKETCH); find . -type f -not -name '*.ino' -not -name '*.h' -not -name '*.c' -not -name '*.cpp' -not -name '*.xxd' | awk '{print "xxd --include " $$0 " > " $$0 ".h"}' | sh
 
 compile: hexdump
 	arduino-cli compile $(SKETCH) --build-path .build/$(SKETCH) --fqbn $(FBQN) --library library --config-file arduino-cli.yaml
@@ -29,7 +29,11 @@ upload:
 
 monitor:
 	sudo chmod a+rw $(PORT)
-	arduino-cli monitor --fqbn $(FBQN) --port $(PORT) --config-file arduino-cli.yaml
+	arduino-cli monitor --config baudrate=115200 --fqbn $(FBQN) --port $(PORT) --config-file arduino-cli.yaml
+
+monitor-describe:
+	sudo chmod a+rw $(PORT)
+	arduino-cli monitor --describe --fqbn $(FBQN) --port $(PORT) --config-file arduino-cli.yaml
 
 clean:
 	rm -rf build
