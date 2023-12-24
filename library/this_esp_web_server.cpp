@@ -1,6 +1,7 @@
 #include "this_esp_web_server.h"
 
 #include <Arduino.h>
+#include <FS.h>
 #include <esp_http_server.h>
 
 EspWebServerRequest::EspWebServerRequest(httpd_req_t *req) { this->req = req; }
@@ -54,7 +55,7 @@ void EspWebServerResponse::fail() { err = ESP_FAIL; }
 
 bool EspWebServerResponse::isConnected() { return err == ESP_OK; }
 
-void EspWebServerResponse::setStatus(char *status) {
+void EspWebServerResponse::setStatus(const char *status) {
   if (err != ESP_OK) {
     return;
   }
@@ -62,7 +63,7 @@ void EspWebServerResponse::setStatus(char *status) {
   err = httpd_resp_set_status(req, status);
 }
 
-void EspWebServerResponse::setType(char *type) {
+void EspWebServerResponse::setType(const char *type) {
   if (err != ESP_OK) {
     return;
   }
@@ -70,7 +71,7 @@ void EspWebServerResponse::setType(char *type) {
   err = httpd_resp_set_type(req, type);
 }
 
-void EspWebServerResponse::setHeader(char *key, char *value) {
+void EspWebServerResponse::setHeader(const char *key, const char *value) {
   if (err != ESP_OK) {
     return;
   }
@@ -78,21 +79,51 @@ void EspWebServerResponse::setHeader(char *key, char *value) {
   err = httpd_resp_set_hdr(req, key, value);
 }
 
-void EspWebServerResponse::write(char *buf, ssize_t len) {
+void EspWebServerResponse::send(const char *status, const char *type, const uint8_t *buf, ssize_t len) {
+  this->setStatus(status);
+
+  this->setType(type);
+
+  err = httpd_resp_send(req, (char *)buf, len);
+}
+
+void EspWebServerResponse::send(const char *status, const char *type, FS fs, const char *path) {
+  this->setStatus(status);
+
+  this->setType(type);
+
+  File file = fs.open(path, "r");
+
+  while (file.available() && err == ESP_OK) {
+    uint8_t buf[128];
+
+    size_t len = file.read(buf, 128);
+
+    Serial.write(buf, len);
+
+    err = httpd_resp_send_chunk(req, (char *)buf, len);
+  }
+
+  file.close();
+}
+
+void EspWebServerResponse::send(const uint8_t *buf, ssize_t len) {
   if (err != ESP_OK) {
     return;
   }
 
-  err = httpd_resp_send_chunk(req, buf, len);
+  err = httpd_resp_send_chunk(req, (char *)buf, len);
 }
 
-void EspWebServerResponse::send(char *status, char *type, char *buf, ssize_t len) {
-  this->setStatus(status);
-  this->setType(type);
-  err = httpd_resp_send(req, buf, len);
+void EspWebServerResponse::send(const char *buf) {
+  if (err != ESP_OK) {
+    return;
+  }
+
+  err = httpd_resp_send_chunk(req, buf, strlen(buf));
 }
 
-void EspWebServerResponse::sendWsFrame(httpd_ws_frame_t *frame) {
+void EspWebServerResponse::send(httpd_ws_frame_t *frame) {
   if (err != ESP_OK) {
     return;
   }

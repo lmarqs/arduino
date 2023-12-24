@@ -1,15 +1,13 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
+#include <SPIFFS.h>
 #include <WebServer.h>
 #include <WiFi.h>
+// #include <WiFiManager.h>
 #include <http_parser.h>
 #include <this_esp_camera.h>
 #include <this_esp_web_server.h>
 #include <this_wheelchair.h>
-
-#include "index.css.h"
-#include "index.html.h"
-#include "index.js.h"
 
 EspWebServer WebServer;
 EspWebServer StreamServer;
@@ -33,15 +31,15 @@ const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServ
 };
 
 const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->send(HTTPD_200, "text/html", (char *)__index_html, __index_html_len);
+  res->send(HTTPD_200, "text/html", SPIFFS, "/index.html");
 };
 
 const EspWebServerHandler indexCssHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->send(HTTPD_200, "text/css", (char *)__index_css, __index_css_len);
+  res->send(HTTPD_200, "text/css", SPIFFS, "/index.css");
 };
 
 const EspWebServerHandler indexJsHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->send(HTTPD_200, "text/javascript", (char *)__index_js, __index_js_len);
+  res->send(HTTPD_200, "text/javascript", SPIFFS, "/index.js");
 };
 
 const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -50,18 +48,19 @@ const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebSer
   res->setHeader("Access-Control-Allow-Origin", "*");
   res->setHeader("X-Framerate", "60");
 
-  char *part_buf[128];
+  uint8_t partBuf[128];
 
-  EspCameraPictureReader reader = [res, part_buf](camera_fb_t *fb) {
-    res->write("\r\n--123456789000000000000987654321\r\n", 36);
+  EspCameraPictureReader reader = [res, partBuf](camera_fb_t *fb) {
+    res->send("\r\n--123456789000000000000987654321\r\n");
 
-    size_t hlen = snprintf((char *)part_buf, 128,
-                           "Content-Type: image/jpeg\r\nContent-Length: "
-                           "%u\r\nX-Timestamp: %d.%06d\r\n\r\n",
-                           fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
+    ssize_t partBufSize = snprintf((char *)partBuf, 128,
+                                   "Content-Type: image/jpeg\r\nContent-Length: "
+                                   "%u\r\nX-Timestamp: %d.%06d\r\n\r\n\0",
+                                   fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
 
-    res->write((char *)part_buf, hlen);
-    res->write((char *)fb->buf, fb->len);
+    res->send(partBuf, partBufSize);
+
+    res->send(fb->buf, fb->len);
   };
 
   while (res->isConnected()) {
@@ -70,7 +69,7 @@ const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebSer
 };
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   Serial.println("\nStarting...");
 

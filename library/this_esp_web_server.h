@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <FS.h>
 #define CONFIG_HTTPD_WS_SUPPORT
 #include <esp_http_server.h>
 
@@ -34,17 +35,21 @@ class EspWebServerResponse {
 
   bool isConnected();
 
-  void setStatus(char *status);
+  void setStatus(const char *status);
 
-  void setType(char *type);
+  void setType(const char *type);
 
-  void setHeader(char *key, char *value);
+  void setHeader(const char *key, const char *value);
 
-  void write(char *buf, ssize_t len);
+  void send(const char *status, const char *type, const uint8_t *buf, ssize_t len);
 
-  void send(char *status, char *type, char *buf, ssize_t len);
+  void send(const char *status, const char *type, FS fs, const char *path);
 
-  void sendWsFrame(httpd_ws_frame_t *buf);
+  void send(const char *buf);
+
+  void send(const uint8_t *buf, ssize_t len);
+
+  void send(httpd_ws_frame_t *buf);
 };
 
 using EspWebServerHandler = std::function<void(EspWebServerRequest *req, EspWebServerResponse *res)>;

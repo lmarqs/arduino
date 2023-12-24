@@ -1,17 +1,25 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  ? "192.168.4.1"
+  ? "192.168.1.15"
   : location.host;
+
+document.addEventListener("DOMContentLoaded", () => {
+  main();
+  setInterval(loop, 50);
+});
 
 class VideoStreamFromWebServer {
   constructor(el, host) {
     this.host = host;
     this.el = el;
+    this.img = document.createElement("img");
+
+    el.appendChild(this.img);
   }
 
   begin() {
-    this.el.src = `http://${this.host}:81/stream`;
+    this.img.src = `http://${this.host}:81/stream`;
   }
 }
 
@@ -127,11 +135,6 @@ function loop() {
   updateFromUserInput(joystick, wheelChair, camera);
   inputWebSocket.send(wheelChair, camera);
 }
-
-; (() => {
-  main();
-  setInterval(loop, 50);
-})();
 
 function updateFromUserInput(joystick, wheelChair, camera) {
   const gamepad = navigator.getGamepads().filter(Boolean)[0];
