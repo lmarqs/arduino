@@ -44,31 +44,27 @@ const EspWebServerHandler indexJsHandler = [](EspWebServerRequest *req, EspWebSe
 
 const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   res->setType("multipart/x-mixed-replace;boundary=123456789000000000000987654321");
-
   res->setHeader("Access-Control-Allow-Origin", "*");
   res->setHeader("X-Framerate", "60");
 
   uint8_t buf[128];
 
   EspCameraPictureReader reader = [res, buf](camera_fb_t *fb) {
-    res->send("\r\n--123456789000000000000987654321\r\n");
+    res->send((uint8_t *)"\r\n--123456789000000000000987654321\r\n", 36);
 
     size_t len = snprintf((char *)buf, 128,
-                          "Content-Type: image/jpeg\r\nContent-Length: "
-                          "%u\r\nX-Timestamp: %d.%06d\r\n\r\n",
+                          "Content-Type: image/jpeg\r\n"
+                          "Content-Length: %u\r\n"
+                          "X-Timestamp: %d.%06d\r\n"
+                          "\r\n",
                           fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
 
     res->send(buf, len);
 
-    Serial.write(buf, len);
-
     res->send(fb->buf, fb->len);
   };
 
-  Serial.println("stream");
-
   while (res->isConnected()) {
-    Serial.println("capture");
     Camera.capture(reader);
   }
 };
@@ -102,4 +98,4 @@ void setup() {
   Serial.println("Ready!");
 }
 
-void loop() { delay(150); }
+void loop() { delay(10000); }
