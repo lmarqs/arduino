@@ -48,22 +48,27 @@ const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebSer
   res->setHeader("Access-Control-Allow-Origin", "*");
   res->setHeader("X-Framerate", "60");
 
-  uint8_t partBuf[128];
+  uint8_t buf[128];
 
-  EspCameraPictureReader reader = [res, partBuf](camera_fb_t *fb) {
+  EspCameraPictureReader reader = [res, buf](camera_fb_t *fb) {
     res->send("\r\n--123456789000000000000987654321\r\n");
 
-    ssize_t partBufSize = snprintf((char *)partBuf, 128,
-                                   "Content-Type: image/jpeg\r\nContent-Length: "
-                                   "%u\r\nX-Timestamp: %d.%06d\r\n\r\n\0",
-                                   fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
+    size_t len = snprintf((char *)buf, 128,
+                          "Content-Type: image/jpeg\r\nContent-Length: "
+                          "%u\r\nX-Timestamp: %d.%06d\r\n\r\n",
+                          fb->len, fb->timestamp.tv_sec, fb->timestamp.tv_usec);
 
-    res->send(partBuf, partBufSize);
+    res->send(buf, len);
+
+    Serial.write(buf, len);
 
     res->send(fb->buf, fb->len);
   };
 
+  Serial.println("stream");
+
   while (res->isConnected()) {
+    Serial.println("capture");
     Camera.capture(reader);
   }
 };
@@ -73,16 +78,13 @@ void setup() {
 
   Serial.println("\nStarting...");
 
-  WiFi.softAP("rocketspy", "rocketspy");
-  // WiFi.begin("", "");
-  // WiFi.setSleep(false);
-
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   delay(500);
-  //   Serial.print(".");
-  // }
-
   Camera.begin();
+
+  CameraTilt.attach(16);
+
+  WiFi.softAP("rocketspy", "rocketspy");
+
+  SPIFFS.begin();
 
   WebServer.begin(80);
 
@@ -97,11 +99,7 @@ void setup() {
 
   WheelChair.begin();
 
-  CameraTilt.attach(16);
-
-  Serial.print("Ready! Use 'http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("' to connect");
+  Serial.println("Ready!");
 }
 
 void loop() { delay(150); }
