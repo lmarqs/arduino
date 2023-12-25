@@ -8,38 +8,40 @@ EspWebServerRequest::EspWebServerRequest(httpd_req_t *req) { this->req = req; }
 
 int EspWebServerRequest::getMethod() { return req->method; }
 
-void EspWebServerRequest::receiveWsFrame(EspWebServerWsFrameProcessor processor) {
-  httpd_ws_frame_t *frame = (httpd_ws_frame_t *)malloc(sizeof(httpd_ws_frame_t));
+esp_err_t EspWebServerRequest::nextFrame(EspWebServerWsFrameHandler handler) {
+  esp_err_t ret;
 
-  if (!frame) {
-    return;
+  httpd_ws_frame_t frame;
+
+  memset(&frame, 0, sizeof(httpd_ws_frame_t));
+
+  ret = httpd_ws_recv_frame(req, &frame, 0);
+
+  if (ret != ESP_OK) {
+    return ret;
   }
 
-  memset(frame, 0, sizeof(httpd_ws_frame_t));
-
-  frame->type = HTTPD_WS_TYPE_TEXT;
-
-  esp_err_t ret = httpd_ws_recv_frame(req, frame, 0);
-
-  if (ret != ESP_OK || !frame->len) {
-    return;
+  if (!frame.len) {
+    handler(&frame);
+    return ret;
   }
 
-  frame->payload = (uint8_t *)malloc(frame->len + 1);
+  uint8_t *buf = (uint8_t *)calloc(1, frame.len + 1);
 
-  if (!frame->payload) {
-    return;
+  if (!buf) {
+    return ESP_ERR_NO_MEM;
   }
 
-  ret = httpd_ws_recv_frame(req, frame, frame->len);
+  frame.payload = buf;
+
+  ret = httpd_ws_recv_frame(req, &frame, frame.len);
 
   if (ret == ESP_OK) {
-    processor(frame);
+    handler(&frame);
   }
 
-  free(frame->payload);
-
-  free(frame);
+  free(buf);
+  return ret;
 }
 
 EspWebServerResponse::EspWebServerResponse(httpd_req_t *req) {
@@ -52,6 +54,8 @@ esp_err_t EspWebServerResponse::getErr() { return err; }
 void EspWebServerResponse::reset() { err = ESP_OK; }
 
 void EspWebServerResponse::fail() { err = ESP_FAIL; }
+
+void EspWebServerResponse::fail(esp_err_t reason) { err = reason; }
 
 bool EspWebServerResponse::isConnected() { return err == ESP_OK; }
 
