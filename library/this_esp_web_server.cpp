@@ -79,7 +79,7 @@ void EspWebServerResponse::setHeader(const char *key, const char *value) {
   err = httpd_resp_set_hdr(req, key, value);
 }
 
-void EspWebServerResponse::send(const char *status, const char *type, const uint8_t *buf, ssize_t len) {
+void EspWebServerResponse::send(const char *status, const char *type, const uint8_t *buf, size_t len) {
   this->setStatus(status);
 
   this->setType(type);
@@ -94,20 +94,24 @@ void EspWebServerResponse::send(const char *status, const char *type, FS fs, con
 
   File file = fs.open(path, "r");
 
+  req->content_len = file.size();
+
+  uint8_t buf[128];
+
+  size_t len;
+
   while (file.available() && err == ESP_OK) {
-    uint8_t buf[128];
+    len = file.read(buf, 128);
 
-    size_t len = file.read(buf, 128);
-
-    Serial.write(buf, len);
-
-    err = httpd_resp_send_chunk(req, (char *)buf, len);
+    this->send(buf, len);
   }
+
+  this->send(NULL, 0);
 
   file.close();
 }
 
-void EspWebServerResponse::send(const uint8_t *buf, ssize_t len) {
+void EspWebServerResponse::send(const uint8_t *buf, size_t len) {
   if (err != ESP_OK) {
     return;
   }

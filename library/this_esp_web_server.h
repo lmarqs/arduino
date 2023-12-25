@@ -41,13 +41,13 @@ class EspWebServerResponse {
 
   void setHeader(const char *key, const char *value);
 
-  void send(const char *status, const char *type, const uint8_t *buf, ssize_t len);
+  void send(const char *status, const char *type, const uint8_t *buf, size_t len);
 
   void send(const char *status, const char *type, FS fs, const char *path);
 
   void send(const char *buf);
 
-  void send(const uint8_t *buf, ssize_t len);
+  void send(const uint8_t *buf, size_t len);
 
   void send(httpd_ws_frame_t *buf);
 };
