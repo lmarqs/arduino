@@ -31,7 +31,15 @@ class InputWebSocket {
   }
 
   begin() {
+    this.connect();
+  }
+
+  connect() {
     this.ws = new WebSocket(`ws://${this.host}/input`);
+
+    this.ws.onclose = () => setTimeout(() => this.connect(), 100);
+
+    this.ws.onerror = () => ws.close();
   }
 
   send(wheelChair, cameraPosition) {
