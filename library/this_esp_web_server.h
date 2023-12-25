@@ -39,6 +39,8 @@ class EspWebServerResponse {
 
   void setType(const char *type);
 
+  void setContentLength(size_t len);
+
   void setHeader(const char *key, const char *value);
 
   void send(const char *status, const char *type, const uint8_t *buf, size_t len);

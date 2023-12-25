@@ -71,6 +71,8 @@ void EspWebServerResponse::setType(const char *type) {
   err = httpd_resp_set_type(req, type);
 }
 
+void EspWebServerResponse::setContentLength(size_t len) { req->content_len = len; }
+
 void EspWebServerResponse::setHeader(const char *key, const char *value) {
   if (err != ESP_OK) {
     return;
@@ -94,7 +96,7 @@ void EspWebServerResponse::send(const char *status, const char *type, FS fs, con
 
   File file = fs.open(path, "r");
 
-  req->content_len = file.size();
+  this->setContentLength(file.size());
 
   uint8_t buf[128];
 
