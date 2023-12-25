@@ -3,11 +3,15 @@
 #include <SPIFFS.h>
 #include <WebServer.h>
 #include <WiFi.h>
-// #include <WiFiManager.h>
+#include <WiFiManager.h>
 #include <http_parser.h>
 #include <this_esp_camera.h>
 #include <this_esp_web_server.h>
 #include <this_wheelchair.h>
+
+// #define ROCKETSPY_CREATE_AP
+#define ROCKETSPY_AP_SSID "rocketspy"
+#define ROCKETSPY_AP_PASSWORD "rocketspy"
 
 EspWebServer WebServer;
 EspWebServer StreamServer;
@@ -78,7 +82,19 @@ void setup() {
 
   CameraTilt.attach(16);
 
-  WiFi.softAP("rocketspy", "rocketspy");
+#ifdef ROCKETSPY_CREATE_AP
+  WiFi.softAP(ROCKETSPY_AP_SSID, ROCKETSPY_AP_PASSWORD);
+#else
+  WiFiManager wifiManager;
+
+  if (!wifiManager.autoConnect(ROCKETSPY_AP_SSID, ROCKETSPY_AP_PASSWORD)) {
+    ESP.restart();
+    delay(5000);
+  }
+
+  Serial.println("\nConnected to the WiFi network");
+  Serial.println(WiFi.localIP());
+#endif
 
   SPIFFS.begin();
 

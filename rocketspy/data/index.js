@@ -1,8 +1,8 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  ? "192.168.1.15"
-  // ? "192.168.4.1"
+  // ? "192.168.1.15"
+  ? "192.168.4.1"
   : location.host;
 
 document.addEventListener("DOMContentLoaded", () => {
