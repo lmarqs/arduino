@@ -1,7 +1,8 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  ? "192.168.4.1"
+  ? "192.168.1.15"
+  // ? "192.168.4.1"
   : location.host;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -85,7 +86,7 @@ class WheelChair {
 class Camera {
   constructor(el) {
     this.tiltSlider = document.createElement("input");
-    this.tilt = 100;
+    this.tilt = 90;
 
     el.appendChild(this.tiltSlider);
   }
