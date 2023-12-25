@@ -34,13 +34,13 @@ sensor_t *esp_camera_setup() {
   config.frame_size = FRAMESIZE_QVGA;
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
 
-  if (psramFound()) {
-    config.jpeg_quality = 10;
-    config.fb_count = 2;
-    config.fb_location = CAMERA_FB_IN_PSRAM;
-    config.frame_size = FRAMESIZE_UXGA;
-    config.grab_mode = CAMERA_GRAB_LATEST;
-  }
+  // if (psramFound()) {
+  //   config.jpeg_quality = 10;
+  //   config.fb_count = 2;
+  //   config.fb_location = CAMERA_FB_IN_PSRAM;
+  //   config.frame_size = FRAMESIZE_UXGA;
+  //   config.grab_mode = CAMERA_GRAB_LATEST;
+  // }
 
 #if defined(CAMERA_MODEL_ESP_EYE)
   pinMode(13, INPUT_PULLUP);
