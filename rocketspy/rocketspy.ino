@@ -84,15 +84,15 @@ const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServ
 };
 
 const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->send(HTTPD_200, "text/html", __data_index_html, __data_index_html_len);
+  res->send(HTTPD_200, "text/html", data_index_html, data_index_html_len);
 };
 
 const EspWebServerHandler indexCssHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->send(HTTPD_200, "text/css", __data_index_css, __data_index_css_len);
+  res->send(HTTPD_200, "text/css", data_index_css, data_index_css_len);
 };
 
 const EspWebServerHandler indexJsHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->send(HTTPD_200, "text/javascript", __data_index_js, __data_index_js_len);
+  res->send(HTTPD_200, "text/javascript", data_index_js, data_index_js_len);
 };
 
 const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
