@@ -1,13 +1,13 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  // ? "192.168.1.15"
-  ? "192.168.4.1"
+  ? "192.168.1.15"
+  // ? "192.168.4.1"
   : location.host;
 
 document.addEventListener("DOMContentLoaded", () => {
   main();
-  setInterval(loop, 50);
+  setInterval(loop, 100);
 });
 
 class VideoStreamFromWebServer {
@@ -36,6 +36,8 @@ class InputWebSocket {
 
   connect() {
     this.ws = new WebSocket(`ws://${this.host}/input`);
+
+    this.ws.binaryType = "arraybuffer";
 
     this.ws.onclose = () => setTimeout(() => this.connect(), 100);
 
