@@ -8,7 +8,7 @@ EspWebServerRequest::EspWebServerRequest(httpd_req_t *req) { this->req = req; }
 
 int EspWebServerRequest::getMethod() { return req->method; }
 
-esp_err_t EspWebServerRequest::nextFrame(EspWebServerWsFrameHandler handler) {
+esp_err_t EspWebServerRequest::frame(EspWebServerFrameHandler handler) {
   esp_err_t ret;
 
   httpd_ws_frame_t frame;
@@ -43,6 +43,27 @@ esp_err_t EspWebServerRequest::nextFrame(EspWebServerWsFrameHandler handler) {
   free(buf);
   return ret;
 }
+
+esp_err_t EspWebServerRequest::body(EspWebServerBodyHandler handler) {
+  uint8_t *buf = (uint8_t *)calloc(1, req->content_len + 1);
+
+  if (!buf) {
+    return ESP_ERR_NO_MEM;
+  }
+
+  int ret = httpd_req_recv(req, (char *)buf, req->content_len);
+
+  if (ret <= 0) {
+    return ESP_FAIL;
+  }
+
+  handler(buf, req->content_len);
+
+  free(buf);
+
+  return ESP_OK;
+}
+
 
 EspWebServerResponse::EspWebServerResponse(httpd_req_t *req) {
   this->req = req;

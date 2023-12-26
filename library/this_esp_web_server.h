@@ -5,7 +5,8 @@
 #define CONFIG_HTTPD_WS_SUPPORT
 #include <esp_http_server.h>
 
-using EspWebServerWsFrameHandler = std::function<void(httpd_ws_frame_t *frame)>;
+using EspWebServerFrameHandler = std::function<void(httpd_ws_frame_t *frame)>;
+using EspWebServerBodyHandler = std::function<void(uint8_t *buf, size_t len)>;
 
 class EspWebServerRequest {
  private:
@@ -16,7 +17,9 @@ class EspWebServerRequest {
 
   int getMethod();
 
-  esp_err_t nextFrame(EspWebServerWsFrameHandler handler);
+  esp_err_t frame(EspWebServerFrameHandler handler);
+
+  esp_err_t body(EspWebServerBodyHandler handler);
 };
 
 class EspWebServerResponse {
