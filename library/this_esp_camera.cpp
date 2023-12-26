@@ -8,11 +8,11 @@
 void EspCamera::begin() { sensor = esp_camera_setup(); }
 
 void EspCamera::capture(EspCameraPictureReader reader) {
-  if (fb) {
-    return;
-  }
+  // if (fb) {
+  //   return;
+  // }
 
-  fb = esp_camera_fb_get();
+  camera_fb_t* fb = esp_camera_fb_get();
 
   if (!fb) {
     Serial.println("Frame buffer could not be acquired");
