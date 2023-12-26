@@ -1,8 +1,8 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  ? "192.168.1.15"
-  // ? "192.168.4.1"
+  // ? "192.168.1.18"
+  ? "192.168.4.1"
   : location.host;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -94,14 +94,14 @@ class Slider {
     this.url = url;
 
     this.input = document.createElement("input");
-    this.input.value = 90;
-
+    
     el.appendChild(this.input);
   }
-
+  
   begin() {
     this.input.type = "range";
     this.input.readOnly = true;
+    this.input.value = 10;
     this.input.max = 100;
     this.input.min = 0;
     this.input.oninput = () => this.post();
