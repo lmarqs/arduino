@@ -3,15 +3,15 @@
 #define ROCKETSPY_AP_PASSWORD "rocketspy"
 
 #include <Arduino.h>
-#include <ESP32Servo.h>
-#include <SPIFFS.h>
 #include <WebServer.h>
 #include <WiFi.h>
+
 #ifndef ROCKETSPY_CREATE_AP
 #include <WiFiManager.h>
 #endif
 #include <http_parser.h>
 #include <this_esp_camera.h>
+#include <this_esp_servo.h>
 #include <this_esp_web_server.h>
 #include <this_wheelchair.h>
 
@@ -22,65 +22,44 @@
 EspWebServer WebServer;
 EspWebServer StreamServer;
 EspCamera Camera;
-Servo CameraTilt;
+EspServo Tilt;
+
 L298WheelChair WheelChair(12, 13, 15, 14, 2, 4);
 
-struct UserInput {
- private:
- bool isOpened;
-  int8_t speedLeft;
-  int8_t speedRight;
-  int8_t tilt;
-
- public:
-  UserInput() {
-    speedLeft = 0;
-    speedRight = 0;
-    tilt = 90;
-    isOpened = true;
-  }
-
-  int8_t getSpeedLeft() { return speedLeft; }
-  int8_t getSpeedRight() { return speedRight; }
-  int8_t getTilt() { return tilt; }
-
-  void update(int8_t speedLeft, int8_t speedRight, int8_t tilt) {
-    if (!this->isOpened) {
-      return;
-    }
-
-    this->isOpened = false;
-
-    this->speedLeft = speedLeft;
-    this->speedRight = speedRight;
-    this->tilt = tilt;
-  }
-
-  void resume() { this->isOpened = true; }
-
-} userInput;
-
-EspWebServerWsFrameHandler inputFrameHandler = [](httpd_ws_frame_t *frame) {
-  if (frame->len != 3) {
+EspWebServerFrameHandler moveFrameHandler = [](httpd_ws_frame_t *frame) {
+  if (frame->len != 2) {
     return;
   }
-
-  Serial.printf("frame->len: %d\n", frame->len);
-
-  Serial.printf("frame->payload: %d, %d, %d\n", frame->payload[0], frame->payload[1], frame->payload[2]);
 
   int8_t *payload = (int8_t *)frame->payload;
 
-  userInput.update(payload[0], payload[1], payload[2]);
+  WheelChair.move(payload[0], payload[1]);
 };
 
-const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+const EspWebServerHandler moveHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   if (req->getMethod() == HTTP_GET) {
-    Serial.println("Handshake");
     return;
   }
 
-  res->fail(req->nextFrame(inputFrameHandler));
+  res->fail(req->frame(moveFrameHandler));
+};
+
+EspWebServerBodyHandler tiltBodyHandler = [](uint8_t *buf, size_t len) {
+  if (len != 1) {
+    return;
+  }
+
+  int8_t *payload = (int8_t *)buf;
+
+  int tilt = map(payload[0], 0, 100, -180, 0);
+
+  Tilt.write(tilt);
+};
+
+const EspWebServerHandler tiltHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  res->fail(req->body(tiltBodyHandler));
+  res->setHeader("Access-Control-Allow-Origin", "*");
+  res->send(HTTPD_200, "text/plain", NULL, 0);
 };
 
 const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -128,8 +107,7 @@ void setup() {
   Serial.println("\nStarting...");
 
   Camera.begin();
-
-  CameraTilt.attach(16);
+  Tilt.attach(16, 2, 0, 180);
 
 #ifdef ROCKETSPY_CREATE_AP
   WiFi.softAP(ROCKETSPY_AP_SSID, ROCKETSPY_AP_PASSWORD);
@@ -150,7 +128,8 @@ void setup() {
   WebServer.on("/", HTTP_GET, indexHtmlHandler);
   WebServer.on("/index.css", HTTP_GET, indexCssHandler);
   WebServer.on("/index.js", HTTP_GET, indexJsHandler);
-  WebServer.on("/input", HTTP_GET, inputHandler);
+  WebServer.on("/move", HTTP_GET, moveHandler);
+  WebServer.on("/tilt", HTTP_POST, tiltHandler);
 
   StreamServer.begin(81);
 
@@ -161,8 +140,4 @@ void setup() {
   Serial.println("Ready!");
 }
 
-void loop() {
-  WheelChair.move(userInput.getSpeedLeft(), userInput.getSpeedRight());
-  CameraTilt.write(userInput.getTilt() * 170 / 100);
-  userInput.resume();
-}
+void loop() { delay(1000); }
