@@ -23,14 +23,14 @@ label {
   padding: 0.5em;
 }
 
-@media only screen and (max-width: 767px) {
+@media (orientation: portrait) or (max-width: 767px) {
   [class*="col-"] {
     flex-basis: 100%;
     max-width: 100%;
   }
 }
 
-@media only screen and (min-width: 768px) {
+@media (orientation: landscape) or (min-width: 768px) {
   .col-1 {
     flex: 0 0 8.33%;
     max-width: 8.33%;
