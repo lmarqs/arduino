@@ -101,7 +101,7 @@ class Slider {
   begin() {
     this.input.type = "range";
     this.input.readOnly = true;
-    this.input.value = 10;
+    this.input.value = 30;
     this.input.max = 100;
     this.input.min = 0;
     this.input.oninput = () => this.post();
