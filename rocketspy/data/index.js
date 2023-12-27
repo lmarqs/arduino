@@ -94,10 +94,10 @@ class Slider {
     this.url = url;
 
     this.input = document.createElement("input");
-    
+
     el.appendChild(this.input);
   }
-  
+
   begin() {
     this.input.type = "range";
     this.input.readOnly = true;
