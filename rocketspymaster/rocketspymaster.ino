@@ -9,11 +9,10 @@
 #ifndef ROCKETSPY_CREATE_AP
 #include <WiFiManager.h>
 #endif
+#include <Wire.h>
 #include <http_parser.h>
 #include <this_esp_camera.h>
-#include <this_esp_servo.h>
 #include <this_esp_web_server.h>
-#include <this_wheelchair.h>
 
 #include "data/index.css.h"
 #include "data/index.html.h"
@@ -22,44 +21,19 @@
 EspWebServer WebServer;
 EspWebServer StreamServer;
 EspCamera Camera;
-EspServo Tilt;
 
-L298WheelChair WheelChair(12, 13, 15, 14, 2, 4);
-
-EspWebServerFrameHandler moveFrameHandler = [](httpd_ws_frame_t *frame) {
-  if (frame->len != 2) {
-    return;
-  }
-
-  int8_t *payload = (int8_t *)frame->payload;
-
-  WheelChair.move(payload[0], payload[1]);
+EspWebServerFrameHandler inputFrameHandler = [](httpd_ws_frame_t *frame) {
+    Wire.beginTransmission(0x01);
+    Wire.write(frame->payload, frame->len);
+    Wire.endTransmission();
 };
 
-const EspWebServerHandler moveHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
   if (req->getMethod() == HTTP_GET) {
     return;
   }
 
-  res->fail(req->frame(moveFrameHandler));
-};
-
-EspWebServerBodyHandler tiltBodyHandler = [](uint8_t *buf, size_t len) {
-  if (len != 1) {
-    return;
-  }
-
-  int8_t *payload = (int8_t *)buf;
-
-  int angle = map(payload[0], 0, 100, 170, 0);
-
-  Tilt.write(angle);
-};
-
-const EspWebServerHandler tiltHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->fail(req->body(tiltBodyHandler));
-  res->setHeader("Access-Control-Allow-Origin", "*");
-  res->send(HTTPD_200, "text/plain", NULL, 0);
+  res->fail(req->frame(inputFrameHandler));
 };
 
 const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -106,7 +80,7 @@ void setup() {
 
   Serial.println("\nStarting...");
 
-  Tilt.attach(16, 10);
+  Wire.begin(14, 15);
 
   Camera.begin();
 
@@ -129,19 +103,15 @@ void setup() {
   WebServer.on("/", HTTP_GET, indexHtmlHandler);
   WebServer.on("/index.css", HTTP_GET, indexCssHandler);
   WebServer.on("/index.js", HTTP_GET, indexJsHandler);
-  WebServer.on("/move", HTTP_GET, moveHandler);
-  WebServer.on("/tilt", HTTP_POST, tiltHandler);
+  WebServer.on("/input", HTTP_GET, inputHandler);
 
   StreamServer.begin(81);
 
   StreamServer.on("/stream.jpeg", HTTP_GET, streamHandler);
 
-  WheelChair.begin();
-
   Serial.println("Ready!");
 }
 
 void loop() {
-  WheelChair.noSignal();
-  delay(50);
+  delay(10000);
 }
