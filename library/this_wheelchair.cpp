@@ -82,12 +82,12 @@ void L298WheelChair::move(int speedA, int speedB) {
     }
     analogWrite(enB, -speedB * 255 / 100);
   }
+}
 
-  void noSignal() {
-    noSignalCounter++;
+void L298WheelChair::noSignal() {
+  noSignalCounter++;
 
-    if (noSignalCounter > 10) {
-      move(0, 0);
-    }
+  if (noSignalCounter > 10) {
+    move(0, 0);
   }
 }
