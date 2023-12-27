@@ -171,11 +171,11 @@ function getCameraMovementFromGamepad(gamepad) {
   const down = gamepad.buttons[13];
 
   if (up.pressed) {
-    return [1];
+    return [2];
   }
 
   if (down.pressed) {
-    return [-1];
+    return [-2];
   }
 
   return [0];
