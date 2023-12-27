@@ -141,4 +141,7 @@ void setup() {
   Serial.println("Ready!");
 }
 
-void loop() { delay(10000); }
+void loop() {
+  WheelChair.noSignal();
+  delay(50);
+}

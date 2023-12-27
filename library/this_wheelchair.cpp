@@ -21,6 +21,8 @@ L298WheelChair::L298WheelChair(byte enA, byte in1, byte in2, byte in3, byte in4,
 }
 
 void L298WheelChair::begin() {
+  noSignalCounter = 0;
+
   setPinModes();
 
   setPinsOff();
@@ -51,6 +53,8 @@ void L298WheelChair::setPinsOff() {
 }
 
 void L298WheelChair::move(int speedA, int speedB) {
+  noSignalCounter = 0;
+
   if (speedA >= 0) {
     digitalWrite(in1, HIGH);
     if (isUsing6Pins) {
@@ -77,5 +81,13 @@ void L298WheelChair::move(int speedA, int speedB) {
       digitalWrite(in4, HIGH);
     }
     analogWrite(enB, -speedB * 255 / 100);
+  }
+
+  void noSignal() {
+    noSignalCounter++;
+
+    if (noSignalCounter > 10) {
+      move(0, 0);
+    }
   }
 }
