@@ -8,10 +8,6 @@
 void EspCamera::begin() { sensor = esp_camera_setup(); }
 
 void EspCamera::capture(EspCameraPictureReader reader) {
-  // if (fb) {
-  //   return;
-  // }
-
   camera_fb_t* fb = esp_camera_fb_get();
 
   if (!fb) {
