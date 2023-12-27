@@ -51,9 +51,9 @@ EspWebServerBodyHandler tiltBodyHandler = [](uint8_t *buf, size_t len) {
 
   int8_t *payload = (int8_t *)buf;
 
-  int tilt = map(payload[0], 0, 100, -180, 0);
+  int angle = map(payload[0], 0, 100, 170, 0);
 
-  Tilt.write(tilt);
+  Tilt.write(angle);
 };
 
 const EspWebServerHandler tiltHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -106,8 +106,9 @@ void setup() {
 
   Serial.println("\nStarting...");
 
+  Tilt.attach(16, 10);
+
   Camera.begin();
-  Tilt.attach(16, 2, 0, 180);
 
 #ifdef ROCKETSPY_CREATE_AP
   WiFi.softAP(ROCKETSPY_AP_SSID, ROCKETSPY_AP_PASSWORD);
@@ -133,11 +134,11 @@ void setup() {
 
   StreamServer.begin(81);
 
-  StreamServer.on("/stream", HTTP_GET, streamHandler);
+  StreamServer.on("/stream.jpeg", HTTP_GET, streamHandler);
 
   WheelChair.begin();
 
   Serial.println("Ready!");
 }
 
-void loop() { delay(1000); }
+void loop() { delay(10000); }
