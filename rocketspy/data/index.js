@@ -124,7 +124,7 @@ class Slider {
 
 const stream = new VideoStreamFromWebServer(
   document.getElementById("stream"),
-  `http://${WEB_SERVER_HOST}:81/stream`,
+  `http://${WEB_SERVER_HOST}:81/stream.jpeg`,
 );
 
 const joystick = new JoyStick(document.getElementById("joystick"));
