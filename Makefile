@@ -21,7 +21,7 @@ run: compile upload monitor
 hexdump:
 	cd $(SKETCH); find data -type f -not -name '*.h' | awk '{print "xxd --include " $$0 " > " $$0 ".h"}' | sh
 
-compile:
+compile: hexdump
 	arduino-cli compile $(SKETCH) --build-path .build/$(SKETCH) --fqbn $(FBQN) --library library --config-file arduino-cli.yaml
 
 filesystem.spiffs:
