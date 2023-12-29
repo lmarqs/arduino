@@ -1,4 +1,6 @@
+#include <Arduino.h>
 #include <BLEDevice.h>
+#include <this_wheelchair.h>
 
 static BLEUUID serviceUUID("2ab61dc3-ef26-4d92-aa2c-ec180a167047");
 static BLEUUID userInputUUID("b1af0278-69ab-4a0f-bbd0-811ce0947198");
@@ -7,16 +9,26 @@ static boolean doConnect = false;
 static BLERemoteCharacteristic* userInput;
 static BLEAdvertisedDevice* serverDevice;
 
+HalfBridgeWheelChair motors(0, 1, 2, 3);
+
 static void handleUserInput(BLERemoteCharacteristic* c, uint8_t* data, size_t length, bool isNotify) {
-  Serial.print("Notify callback for characteristic ");
-  Serial.print(c->getUUID().toString().c_str());
-  Serial.print(" of data length ");
-  Serial.println(length);
-  Serial.printf("data: ");
-  for (int i = 0; i < length; i++) {
-    Serial.printf("%d ", data[i]);
+  // Serial.print("Notify callback for characteristic ");
+  // Serial.print(c->getUUID().toString().c_str());
+  // Serial.print(" of data length ");
+  // Serial.println(length);
+  // Serial.printf("data: ");
+  // for (int i = 0; i < length; i++) {
+  //   Serial.printf("%d ", (int8_t)data[i]);
+  // }
+  // Serial.println();
+
+  motors.move(data[1], data[2]);
+
+  if (data[0]) {
+    digitalWrite(4, HIGH);
+  } else {
+    digitalWrite(4, LOW);
   }
-  Serial.println();
 }
 
 class ClientCallbacks : public BLEClientCallbacks {
@@ -82,14 +94,25 @@ class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting Arduino BLE Client application...");
+
+  Serial.println("Starting...");
+
+  pinMode(4, OUTPUT);
+  digitalWrite(4, LOW);
+
   BLEDevice::init("");
+
   BLEScan* scan = BLEDevice::getScan();
+
   scan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());
   scan->setInterval(1349);
   scan->setWindow(449);
   scan->setActiveScan(true);
   scan->start(5, false);
+
+  motors.begin();
+
+  Serial.println("Ready!");
 }
 
 void loop() {
@@ -102,5 +125,7 @@ void loop() {
     doConnect = false;
   }
 
-  delay(1000);
+  motors.noSignal();
+
+  delay(100);
 }
