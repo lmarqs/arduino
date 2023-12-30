@@ -9,7 +9,7 @@ static boolean doConnect = false;
 static BLERemoteCharacteristic* userInput;
 static BLEAdvertisedDevice* serverDevice;
 
-HalfBridgeWheelChair motors(0, 1, 2, 3);
+HalfBridgeWheelChair motors(0,1,2,3);
 
 static void handleUserInput(BLERemoteCharacteristic* c, uint8_t* data, size_t length, bool isNotify) {
   // Serial.print("Notify callback for characteristic ");
@@ -22,13 +22,11 @@ static void handleUserInput(BLERemoteCharacteristic* c, uint8_t* data, size_t le
   // }
   // Serial.println();
 
-  motors.move(data[1], data[2]);
+  bool button = data[0];
+  int8_t speedL = data[1];
+  int8_t speedR = data[2];
 
-  if (data[0]) {
-    digitalWrite(4, HIGH);
-  } else {
-    digitalWrite(4, LOW);
-  }
+  motors.move(speedL, speedR);
 }
 
 class ClientCallbacks : public BLEClientCallbacks {
@@ -125,7 +123,7 @@ void loop() {
     doConnect = false;
   }
 
-  motors.noSignal();
+  // motors.noSignal();
 
   delay(100);
 }
