@@ -1,4 +1,3 @@
 .build/
 .arduino15/
 .vscode/
-**/*.*.h
