@@ -71,10 +71,5 @@ sensor_t *esp_camera_setup() {
   sensor->set_vflip(sensor, 1);
 #endif
 
-#if defined(LED_GPIO_NUM) && CONFIG_LED_ILLUMINATOR_ENABLED
-  // ledcSetup(LED_GPIO_NUM, 5000, 8);
-  // ledcAttachPin(pin, LED_GPIO_NUM);
-#endif
-
   return sensor;
 }
