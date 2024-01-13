@@ -35,8 +35,6 @@ class FullBridgeWheelChair : public WheelChair {
 class HalfBridgeWheelChair : public WheelChair {
  private:
   byte in1, in2, in3, in4;
-  void writeValues(byte low, byte en, int8_t value);
-  void setSpeed(byte pin1, byte pin2, int8_t speed);
   void setPinModes();
   void setPinsOff();
 

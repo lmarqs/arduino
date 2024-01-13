@@ -27,9 +27,7 @@ FullBridgeWheelChair::FullBridgeWheelChair(byte enA, byte in1, byte in2, byte in
   this->enB = enB;
 }
 
-void FullBridgeWheelChair::begin() {
-  WheelChair::begin();
-}
+void FullBridgeWheelChair::begin() { WheelChair::begin(); }
 
 void FullBridgeWheelChair::setPinModes() {
   pinMode(enA, OUTPUT);
@@ -90,25 +88,30 @@ void HalfBridgeWheelChair::setPinsOff() {
   digitalWrite(in4, LOW);
 }
 
-void HalfBridgeWheelChair::begin() {
-  WheelChair::begin();
-}
+void HalfBridgeWheelChair::begin() { WheelChair::begin(); }
 
 void HalfBridgeWheelChair::move(int8_t speedA, int8_t speedB) {
   WheelChair::signal();
-  setSpeed(in1, in2, speedA);
-  setSpeed(in3, in4, speedB);
-}
 
-void HalfBridgeWheelChair::setSpeed(byte pin1, byte pin2, int8_t speed) {
-  if (speed >= 0) {
-    writeValues(pin1, pin2, map(speed, 0, 100, 0, 255));
+  if (!speedA) {
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, LOW);
+  } else if (speedA > 0) {
+    digitalWrite(in1, map(speedA, 0, 100, 0, 255));
+    digitalWrite(in2, LOW);
   } else {
-    writeValues(pin2, pin1, map(speed, -100, 0, 255, 0));
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, map(speedA, -100, 0, 255, 0));
   }
-}
 
-void HalfBridgeWheelChair::writeValues(byte low, byte en, int8_t value) {
-  digitalWrite(low, LOW);
-  analogWrite(en, value);
+  if (!speedB) {
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, LOW);
+  } else if (speedB > 0) {
+    digitalWrite(in3, map(speedB, 0, 100, 0, 255));
+    digitalWrite(in4, LOW);
+  } else {
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, map(speedB, -100, 0, 255, 0));
+  }
 }
