@@ -9,11 +9,11 @@ install-dependencies:
 	arduino-cli core install digistump:avr@1.6.7 --config-file arduino-cli.yaml
 	arduino-cli core install esp32-bluepad32:esp32@3.10.2 --config-file arduino-cli.yaml
 	arduino-cli core install esp32:esp32@2.0.14 --config-file arduino-cli.yaml
+	arduino-cli lib install 'RoboCore - Vespa@1.1.0' --config-file arduino-cli.yaml
+	arduino-cli lib install ESP32Servo@1.1.1 --config-file arduino-cli.yaml
 	arduino-cli lib install IRremote@4.2.0 --config-file arduino-cli.yaml
 	arduino-cli lib install LiquidCrystal@1.0.7 --config-file arduino-cli.yaml
-	arduino-cli lib install 'RoboCore - Vespa@1.1.0' --config-file arduino-cli.yaml
 	arduino-cli lib install Servo@1.2.1 --config-file arduino-cli.yaml
-	arduino-cli lib install ESP32Servo@1.1.1 --config-file arduino-cli.yaml
 	arduino-cli lib install WiFiManager@2.0.16-rc.2 --config-file arduino-cli.yaml
 
 run: compile upload monitor
