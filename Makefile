@@ -31,7 +31,7 @@ compile: hexdump
 
 filesystem.spiffs:
 	sudo chmod a+rw $(PORT)
-	# values from ./.arduino15/data/packages/esp32/hardware/esp32/2.0.14/tools/partitions/default.csv
+	# cat .arduino15/data/packages/esp32/hardware/esp32/2.0.14/tools/partitions/default.csv
 	.arduino15/data/packages/esp32/tools/mkspiffs/0.2.3/mkspiffs --create $(SKETCH)/data --page 256 --block 4096 --size 917504 .build/$(SKETCH)/filesystem.spiffs
 	python .arduino15/data/packages/esp32/tools/esptool_py/4.5.1/esptool.py --baud 460800 --port $(PORT) --before default_reset --after hard_reset write_flash 0x310000 .build/$(SKETCH)/filesystem.spiffs
 
