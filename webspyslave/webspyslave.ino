@@ -3,6 +3,8 @@
 
 VespaMotors *motors;
 
+int8_t noSignal = 0;
+
 void receiveEvent(int len) {
   size_t size = 2;
 
@@ -22,6 +24,8 @@ void receiveEvent(int len) {
     return;
   }
 
+  noSignal = 0;
+
   motors->turn(buf[0], buf[1]);
 }
 
@@ -34,6 +38,13 @@ void setup() {
   motors = new VespaMotors();
 }
 
+
 void loop() {
-  delay(10000);
+  if (noSignal > 5) {
+    motors->stop();
+  }
+
+  noSignal++;
+
+  delay(100);
 }

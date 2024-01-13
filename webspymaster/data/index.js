@@ -107,7 +107,7 @@ class Slider {
     this.input.oninput = throttle((e) => fetch(this.url, {
       method: "POST",
       body: new Uint16Array([parseInt(this.input.value)])
-    }), 100);
+    }), 50);
   }
 
   move(value) {
@@ -173,11 +173,11 @@ function getCameraMovementFromGamepad(gamepad) {
   const down = gamepad.buttons[13];
 
   if (up.pressed) {
-    return [30];
+    return [15];
   }
 
   if (down.pressed) {
-    return [-30];
+    return [-15];
   }
 
   return [0];
@@ -188,11 +188,11 @@ function getSpotlightIntensityFromGamepad(gamepad) {
   const right = gamepad.buttons[15];
 
   if (right.pressed) {
-    return [30];
+    return [15];
   }
 
   if (left.pressed) {
-    return [-30];
+    return [-15];
   }
 
   return [0];
