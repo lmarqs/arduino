@@ -117,3 +117,8 @@ label {
   display: block;
   width: 100%;
 }
+
+#spotlight>* {
+  display: block;
+  width: 100%;
+}

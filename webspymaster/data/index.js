@@ -1,8 +1,8 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  // ? "192.168.1.18"
-  ? "192.168.4.1"
+  ? "192.168.137.75"
+  // ? "192.168.4.1"
   : location.host;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -91,9 +91,9 @@ class WheelChair {
 
 class Slider {
   constructor(el, url) {
-    this.url = url;
-
     this.input = document.createElement("input");
+
+    this.url = url;
 
     el.appendChild(this.input);
   }
@@ -101,25 +101,20 @@ class Slider {
   begin() {
     this.input.type = "range";
     this.input.readOnly = true;
-    this.input.value = 30;
-    this.input.max = 100;
+    this.input.value = 0;
+    this.input.max = 1023;
     this.input.min = 0;
-    this.input.oninput = () => this.post();
-
-    this.post();
+    this.input.oninput = throttle((e) => fetch(this.url, {
+      method: "POST",
+      body: new Uint16Array([parseInt(this.input.value)])
+    }), 100);
   }
 
   move(value) {
-    this.input.value = Math.min(this.input.max, Math.max(this.input.min, parseInt(this.input.value) + value));
-    this.post();
+    const { input } = this;
+    input.value = Math.max(Math.min(input.value + value, this.max), this.max);
+    input.oninput();
   }
-
-  post = throttle(() => {
-    fetch(this.url, {
-      method: "POST",
-      body: new Uint8Array([parseInt(this.input.value)]).buffer,
-    });
-  }, 100);
 }
 
 const stream = new VideoStreamFromWebServer(
@@ -134,7 +129,12 @@ const tilt = new Slider(
   `http://${WEB_SERVER_HOST}/tilt`,
 );
 
-const moveWebSocket = new InputWebSocket(`ws://${WEB_SERVER_HOST}/move`);
+const spotlight = new Slider(
+  document.getElementById("spotlight"),
+  `http://${WEB_SERVER_HOST}/spotlight`,
+);
+
+const inputWebSocket = new InputWebSocket(`ws://${WEB_SERVER_HOST}/input`);
 
 const wheelChair = new WheelChair(document.getElementById("wheel-chair"));
 
@@ -142,14 +142,15 @@ function main() {
   stream.begin();
   joystick.begin();
   wheelChair.begin();
-  moveWebSocket.begin();
+  inputWebSocket.begin();
   tilt.begin();
+  spotlight.begin();
 }
 
 function loop() {
   updateFromUserInput(joystick, wheelChair);
 
-  moveWebSocket.send(
+  inputWebSocket.send(
     wheelChair.leftSpeed,
     wheelChair.rightSpeed,
   );
@@ -171,11 +172,11 @@ function getCameraMovementFromGamepad(gamepad) {
   const down = gamepad.buttons[13];
 
   if (up.pressed) {
-    return [2];
+    return [30];
   }
 
   if (down.pressed) {
-    return [-2];
+    return [-30];
   }
 
   return [0];

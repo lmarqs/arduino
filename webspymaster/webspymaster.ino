@@ -1,17 +1,14 @@
-#define ROCKETSPY_CREATE_AP
-#define ROCKETSPY_AP_SSID "rocketspy"
-#define ROCKETSPY_AP_PASSWORD "rocketspy"
+#define WEBSPY_CREATE_AP
+#define WEBSPY_AP_SSID "webspymaster"
+#define WEBSPY_AP_PASSWORD "webspymaster"
 
 #include <Arduino.h>
 #include <WebServer.h>
 #include <WiFi.h>
-
-#ifndef ROCKETSPY_CREATE_AP
-#include <WiFiManager.h>
-#endif
 #include <Wire.h>
 #include <http_parser.h>
 #include <this_esp_camera.h>
+#include <this_esp_ledc.h>
 #include <this_esp_web_server.h>
 
 #include "data/index.css.h"
@@ -21,11 +18,13 @@
 EspWebServer WebServer;
 EspWebServer StreamServer;
 EspCamera Camera;
+EspLedc Spotlight(4, 2, 5000., 10);
+EspLedc Tilt(12, 3, 50., 10);
 
 EspWebServerFrameHandler inputFrameHandler = [](httpd_ws_frame_t *frame) {
-    Wire.beginTransmission(0x01);
-    Wire.write(frame->payload, frame->len);
-    Wire.endTransmission();
+  Wire.beginTransmission(0x01);
+  Wire.write(frame->payload, frame->len);
+  Wire.endTransmission();
 };
 
 const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -34,6 +33,44 @@ const EspWebServerHandler inputHandler = [](EspWebServerRequest *req, EspWebServ
   }
 
   res->fail(req->frame(inputFrameHandler));
+};
+
+EspWebServerBodyHandler spotlightBodyHandler = [](uint8_t *buf, size_t len) {
+  uint16_t data = 0;
+
+  if (sizeof(data) != len) {
+    return;
+  }
+
+  memcpy(&data, buf, len);
+
+  Spotlight.write(data);
+};
+
+const EspWebServerHandler spotlightHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  res->fail(req->body(spotlightBodyHandler));
+  res->setHeader("Access-Control-Allow-Origin", "*");
+  res->send(HTTPD_200, "text/plain", NULL, 0);
+};
+
+EspWebServerBodyHandler tiltBodyHandler = [](uint8_t *buf, size_t len) {
+  uint16_t data = 0;
+
+  if (sizeof(data) != len) {
+    return;
+  }
+
+  memcpy(&data, buf, len);
+
+  uint32_t value = map(data, 1023, 0, 58, 116);
+
+  Tilt.write(value);
+};
+
+const EspWebServerHandler tiltHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
+  res->fail(req->body(tiltBodyHandler));
+  res->setHeader("Access-Control-Allow-Origin", "*");
+  res->send(HTTPD_200, "text/plain", NULL, 0);
 };
 
 const EspWebServerHandler indexHtmlHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
@@ -49,14 +86,14 @@ const EspWebServerHandler indexJsHandler = [](EspWebServerRequest *req, EspWebSe
 };
 
 const EspWebServerHandler streamHandler = [](EspWebServerRequest *req, EspWebServerResponse *res) {
-  res->setType("multipart/x-mixed-replace;boundary=123456789000000000000987654321");
+  res->setType("multipart/x-mixed-replace;boundary=espcameraframe");
   res->setHeader("Access-Control-Allow-Origin", "*");
   res->setHeader("X-Framerate", "60");
 
   uint8_t buf[128];
 
   EspCameraPictureReader reader = [res, buf](camera_fb_t *fb) {
-    res->send((uint8_t *)"\r\n--123456789000000000000987654321\r\n", 36);
+    res->send((uint8_t *)"\r\n--espcameraframe\r\n", 36);
 
     size_t len = snprintf((char *)buf, 128,
                           "Content-Type: image/jpeg\r\n"
@@ -84,18 +121,25 @@ void setup() {
 
   Camera.begin();
 
-#ifdef ROCKETSPY_CREATE_AP
-  WiFi.softAP(ROCKETSPY_AP_SSID, ROCKETSPY_AP_PASSWORD);
-#else
-  WiFiManager wifiManager;
+  Spotlight.begin();
 
-  if (!wifiManager.autoConnect(ROCKETSPY_AP_SSID, ROCKETSPY_AP_PASSWORD)) {
-    ESP.restart();
-    delay(5000);
+  Tilt.begin();
+
+#ifdef WEBSPY_CREATE_AP
+  WiFi.softAP(WEBSPY_AP_SSID, WEBSPY_AP_PASSWORD);
+#else
+  WiFi.begin(WEBSPY_AP_SSID, WEBSPY_AP_PASSWORD);
+
+  Serial.print("Connecting to WiFi.");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
 
-  Serial.println("\nConnected to the WiFi network");
-  Serial.println(WiFi.localIP());
+  Serial.print("\n");
+
+  Serial.println("Connected to the WiFi network");
 #endif
 
   WebServer.begin(80);
@@ -104,6 +148,8 @@ void setup() {
   WebServer.on("/index.css", HTTP_GET, indexCssHandler);
   WebServer.on("/index.js", HTTP_GET, indexJsHandler);
   WebServer.on("/input", HTTP_GET, inputHandler);
+  WebServer.on("/tilt", HTTP_POST, tiltHandler);
+  WebServer.on("/spotlight", HTTP_POST, spotlightHandler);
 
   StreamServer.begin(81);
 
@@ -112,6 +158,4 @@ void setup() {
   Serial.println("Ready!");
 }
 
-void loop() {
-  delay(10000);
-}
+void loop() { delay(10000); }
