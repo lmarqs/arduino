@@ -1,10 +1,11 @@
 #define WEBSPY_CREATE_AP
-#define WEBSPY_AP_SSID "webspymaster"
-#define WEBSPY_AP_PASSWORD "webspymaster"
+#define WEBSPY_AP_SSID "rocketspy"
+#define WEBSPY_AP_PASSWORD "rocketspy"
 
 #include <Arduino.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include <Wire.h>
 #include <http_parser.h>
 #include <this_esp_camera.h>
@@ -125,12 +126,26 @@ void setup() {
 
   Tilt.begin();
 
-#ifdef WEBSPY_CREATE_AP
-  WiFi.softAP(WEBSPY_AP_SSID, WEBSPY_AP_PASSWORD);
-#else
-  WiFi.begin(WEBSPY_AP_SSID, WEBSPY_AP_PASSWORD);
+  WiFiManager wifiManager;
 
-  Serial.print("Connecting to WiFi.");
+  wifiManager.resetSettings();
+
+#ifdef WEBSPY_CREATE_AP
+  Serial.println("Creating AP.");
+
+  WiFi.softAP(WEBSPY_AP_SSID, WEBSPY_AP_PASSWORD);
+
+  Serial.println("AP created!");
+
+  Serial.print("IP: ");
+
+  Serial.println(WiFi.softAPIP());
+#else
+  Serial.println("Connecting to WiFi.");
+
+  WiFi.mode(WIFI_STA);
+
+  WiFi.begin(WEBSPY_AP_SSID, WEBSPY_AP_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -139,8 +154,13 @@ void setup() {
 
   Serial.print("\n");
 
-  Serial.println("Connected to the WiFi network");
+  Serial.println("Connected to the WiFi network!");
+
+  Serial.print("IP: ");
+
+  Serial.println(WiFi.localIP());
 #endif
+  WiFi.printDiag(Serial);
 
   WebServer.begin(80);
 

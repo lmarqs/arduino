@@ -112,7 +112,7 @@ class Slider {
 
   move(value) {
     const { input } = this;
-    input.value = Math.max(Math.min(input.value + value, this.max), this.max);
+    input.value = Math.min(Math.max(+input.value + value, +input.min), +input.max);
     input.oninput();
   }
 }
@@ -148,7 +148,7 @@ function main() {
 }
 
 function loop() {
-  updateFromUserInput(joystick, wheelChair);
+  updateFromUserInput();
 
   inputWebSocket.send(
     wheelChair.leftSpeed,
@@ -156,12 +156,13 @@ function loop() {
   );
 }
 
-function updateFromUserInput(joystick, wheelChair) {
+function updateFromUserInput() {
   const gamepad = navigator.getGamepads().filter(Boolean)[0];
 
   if (gamepad) {
     wheelChair.move(...getSpeedFromGamepad(gamepad));
     tilt.move(...getCameraMovementFromGamepad(gamepad));
+    spotlight.move(...getSpotlightIntensityFromGamepad(gamepad));
   } else {
     wheelChair.move(...getSpeedFromJoystick(joystick));
   }
@@ -176,6 +177,21 @@ function getCameraMovementFromGamepad(gamepad) {
   }
 
   if (down.pressed) {
+    return [-30];
+  }
+
+  return [0];
+}
+
+function getSpotlightIntensityFromGamepad(gamepad) {
+  const left = gamepad.buttons[14];
+  const right = gamepad.buttons[15];
+
+  if (right.pressed) {
+    return [30];
+  }
+
+  if (left.pressed) {
     return [-30];
   }
 
