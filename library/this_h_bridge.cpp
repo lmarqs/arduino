@@ -2,69 +2,77 @@
 
 #include <Arduino.h>
 
-void HBridge::noSignal(uint8_t max) {
-  if (++noSignalCount > max) {
-    return;
+void HBridge::noSignal(uint8_t whenToStop) {
+  if (noSignalCount++ >= whenToStop) {
+    stop();
   }
-
-  write(0);
 }
 
 void HBridge::signal() { noSignalCount = 0; }
 
-FullHBridge::FullHBridge(OutPin* en, OutPin* i1, OutPin* i2) {
-  this->en = en;
-  this->i1 = i1;
-  this->i2 = i2;
+FullHBridge::FullHBridge(OutPin* pwm, OutPin* in1, OutPin* in2) {
+  this->pwm = pwm;
+  this->in1 = in1;
+  this->in2 = in2;
 }
 
 void FullHBridge::begin() {
-  en->begin();
-  i1->begin();
-  i2->begin();
+  pwm->begin();
+  in1->begin();
+  in2->begin();
 }
 
-void FullHBridge::write(int32_t value) {
+void FullHBridge::foward(int32_t value) {
   HBridge::signal();
 
-  if (value == 0) {
-    i1->write(LOW);
-    i2->write(LOW);
-    en->write(0);
-  } else if (value > 0) {
-    i1->write(HIGH);
-    i2->write(LOW);
-    en->write(value);
-  } else {
-    i1->write(LOW);
-    i2->write(HIGH);
-    en->write(-value);
-  }
-
-  en->write(value);
+  in1->write(HIGH);
+  in2->write(LOW);
+  pwm->write(value);
 }
 
-HalfHBridge::HalfHBridge(OutPin* i1, OutPin* i2) {
-  this->i1 = i1;
-  this->i2 = i2;
+void FullHBridge::backward(int32_t value) {
+  HBridge::signal();
+
+  in1->write(LOW);
+  in2->write(HIGH);
+  pwm->write(value);
+}
+
+void FullHBridge::stop() {
+  HBridge::signal();
+
+  in1->write(LOW);
+  in2->write(LOW);
+  pwm->write(0);
+}
+
+HalfHBridge::HalfHBridge(OutPin* in1, OutPin* in2) {
+  this->in1 = in1;
+  this->in2 = in2;
 }
 
 void HalfHBridge::begin() {
-  i1->begin();
-  i2->begin();
+  in1->begin();
+  in2->begin();
 }
 
-void HalfHBridge::write(int32_t value) {
+void HalfHBridge::foward(int32_t value) {
   HBridge::signal();
 
-  if (value == 0) {
-    i1->write(LOW);
-    i2->write(LOW);
-  } else if (value > 0) {
-    i1->write(value);
-    i2->write(LOW);
-  } else {
-    i1->write(LOW);
-    i2->write(-value);
-  }
+  in1->write(LOW);
+  in2->write(LOW);
+}
+
+void HalfHBridge::backward(int32_t value) {
+  HBridge::signal();
+
+  in1->write(value);
+  in2->write(LOW);
+}
+
+void HalfHBridge::stop() {
+  HBridge::signal();
+
+  in1->write(LOW);
+  in2->write(LOW);
 }

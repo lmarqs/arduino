@@ -13,26 +13,32 @@ class HBridge {
   void signal();
 
  public:
-  void noSignal(uint8_t max = 10);
-  virtual void write(int32_t value);
+  void noSignal(uint8_t whenToStop = 10);
+  virtual void stop();
+  virtual void foward(int32_t value);
+  virtual void backward(int32_t value);
 };
 
 class FullHBridge : public HBridge {
  private:
-  OutPin *en, *i1, *i2;
+  OutPin *pwm, *in1, *in2;
 
  public:
-  FullHBridge(OutPin* en, OutPin* i1, OutPin* i2);
+  FullHBridge(OutPin* pwm, OutPin* in1, OutPin* in2);
   void begin();
-  void write(int32_t value);
+  void stop();
+  void foward(int32_t value);
+  void backward(int32_t value);
 };
 
 class HalfHBridge : public HBridge {
  private:
-  OutPin *en, *i1, *i2;
+  OutPin *pwm, *in1, *in2;
 
  public:
-  HalfHBridge(OutPin* i1, OutPin* i2);
+  HalfHBridge(OutPin* in1, OutPin* in2);
   void begin();
-  void write(int32_t value);
+  void stop();
+  void foward(int32_t value);
+  void backward(int32_t value);
 };
