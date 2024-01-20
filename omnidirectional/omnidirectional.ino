@@ -33,32 +33,6 @@ FullHBridge motors[] = {
 
 size_t motors_len = sizeof(motors) / sizeof(FullHBridge);
 
-void testMotor(HBridge* motor) {
-  for (uint32_t i = 0xA0; i <= 0xFF; i++) {
-    motor->foward(i);
-    Serial.println(i, HEX);
-    delay(100);
-  }
-
-  delay(1000);
-
-  motor->stop();
-
-  delay(1000);
-
-  for (uint32_t i = 0xA0; i <= 0xFF; i++) {
-    motor->backward(i);
-    Serial.println(i, HEX);
-    delay(100);
-  }
-
-  delay(1000);
-
-  motor->stop();
-
-  delay(1000);
-}
-
 void setup() {
   Serial.begin(115200);
 
