@@ -5,24 +5,24 @@
 #include <this_h_bridge.h>
 #include <this_pin.h>
 
-EspLedcOutPin pwm1(13, 1, 5000, 12);
-DigitalOutPin in11(12);
-DigitalOutPin in21(14);
+EspLedcOutPin pwm1(21, 1, 5000, 12);
+DigitalOutPin in11(19);
+DigitalOutPin in21(18);
 FullHBridge motor1(&pwm1, &in11, &in21);
 
-EspLedcOutPin pwm2(25, 2, 5000, 12);
-DigitalOutPin in12(26);
-DigitalOutPin in22(27);
+EspLedcOutPin pwm2(4, 2, 5000, 12);
+DigitalOutPin in12(16);
+DigitalOutPin in22(17);
 FullHBridge motor2(&pwm2, &in12, &in22);
 
-EspLedcOutPin pwm3(22, 3, 5000, 12);
-DigitalOutPin in13(21);
-DigitalOutPin in23(19);
+EspLedcOutPin pwm3(13, 3, 5000, 12);
+DigitalOutPin in13(12);
+DigitalOutPin in23(14);
 FullHBridge motor3(&pwm3, &in13, &in23);
 
-EspLedcOutPin pwm4(17, 4, 5000, 12);
-DigitalOutPin in14(5);
-DigitalOutPin in24(18);
+EspLedcOutPin pwm4(33, 4, 5000, 12);
+DigitalOutPin in14(25);
+DigitalOutPin in24(26);
 FullHBridge motor4(&pwm4, &in14, &in24);
 
 FullHBridge motors[] = {
