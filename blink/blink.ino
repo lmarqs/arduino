@@ -1,19 +1,18 @@
 #include <Arduino.h>
+#include <this_digital_pin.h>
 
-const int static pin = 8;
+DigitalOutPin led(2);
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-  pinMode(pin, OUTPUT);
+  led.begin();
 }
 
-void loop()
-{
+void loop() {
   Serial.println("HIGH");
-  digitalWrite(pin, HIGH);
+  led.write(HIGH);
   delay(1000);
   Serial.println("LOW");
-  digitalWrite(pin, LOW);
+  led.write(LOW);
   delay(1000);
 }
