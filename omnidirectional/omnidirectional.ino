@@ -5,6 +5,8 @@
 #include <this_h_bridge.h>
 #include <this_pin.h>
 
+DigitalOutPin led(2);
+
 EspLedcOutPin pwm1(21, 1, 5000, 12);
 DigitalOutPin in11(19);
 DigitalOutPin in21(18);
@@ -118,6 +120,8 @@ void setup() {
   BP32.forgetBluetoothKeys();
   BP32.enableVirtualDevice(false);
 
+  led.begin();
+
   for (size_t i = 0; i < motors_len; i++) {
     motors[i].begin();
   }
@@ -128,6 +132,12 @@ void loop() {
 
   if (!controller) {
     motors->stop();
+
+    led.write(LOW);
+    delay(500);
+    led.write(HIGH);
+    delay(500);
+
     return;
   }
 
@@ -139,11 +149,6 @@ void loop() {
   int32_t normalL = hardcapControllerAxisValue(sqrt((axisLY * axisLY) + (axisLX * axisLX)));
   int32_t normalR = hardcapControllerAxisValue(sqrt((axisRY * axisRY) + (axisRX * axisRX)));
 
-  for (size_t i = 0; i < motors_len; i++) {
-    rotation[i] = 0;
-    translation[i] = 0;
-  }
-
   rotate(axisLY, axisLX, normalL, rotation);
   translate(axisRY, axisRX, normalR, translation);
 
@@ -151,13 +156,11 @@ void loop() {
     int32_t speed = normalL + normalR ? (rotation[i] * normalL + translation[i] * normalR) / (normalL + normalR) : 0;
 
     if (speed >= 0) {
-      uint32_t normal = map(+speed, 0, 512, 0, 0b111111111111 * 0.80);
+      uint32_t normal = map(+speed, 0, 512, 0, 0b110011001100);
       motors[i].foward(normal);
-      // Serial.printf("s%d:\t%d\t%u\t%d\n", i, speed, normal, normalL);
     } else {
-      uint32_t normal = map(-speed, 0, 512, 0, 0b111111111111 * 0.80);
+      uint32_t normal = map(-speed, 0, 512, 0, 0b110011001100);
       motors[i].backward(normal);
-      // Serial.printf("s%d:\t%d\t%u\t%d\n", i, speed, normal, normalL);
     }
   }
 }
