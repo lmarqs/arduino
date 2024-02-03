@@ -101,23 +101,23 @@ class CarPilot {
     int32_t *speeds = rotation->values;
 
     if (axisX >= 0 && axisY <= 0) {
-      speeds[0] = speeds[3] = +normal;
-      speeds[1] = speeds[2] = -axisY - axisX;
+      speeds[0] = speeds[3] = -axisY - axisX;
+      speeds[1] = speeds[2] = +normal;
     }
 
     if (axisX >= 0 && axisY >= 0) {
-      speeds[0] = speeds[3] = -axisY + axisX;
-      speeds[1] = speeds[2] = -normal;
+      speeds[0] = speeds[3] = -normal;
+      speeds[1] = speeds[2] = -axisY + axisX;
     }
 
     if (axisX <= 0 && axisY >= 0) {
-      speeds[0] = speeds[3] = -normal;
-      speeds[1] = speeds[2] = -axisY - axisX;
+      speeds[0] = speeds[3] = -axisY - axisX;
+      speeds[1] = speeds[2] = -normal;
     }
 
     if (axisX <= 0 && axisY <= 0) {
-      speeds[0] = speeds[3] = -axisY + axisX;
-      speeds[1] = speeds[2] = +normal;
+      speeds[0] = speeds[3] = +normal;
+      speeds[1] = speeds[2] = -axisY + axisX;
     }
   }
 
