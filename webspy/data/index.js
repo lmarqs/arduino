@@ -1,8 +1,7 @@
 "use strict";
 
 const WEB_SERVER_HOST = location.hostname === "localhost"
-  ? "192.168.137.75"
-  // ? "192.168.4.1"
+  ? "192.168.4.1"
   : location.host;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -46,7 +45,7 @@ class InputWebSocket {
 
   send(...values) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const { buffer } = new Uint8Array(values);
+      const { buffer } = new Uint32Array(values);
 
       this.ws.send(buffer);
     }
@@ -136,35 +135,23 @@ const spotlight = new Slider(
 
 const inputWebSocket = new InputWebSocket(`ws://${WEB_SERVER_HOST}/input`);
 
-const wheelChair = new WheelChair(document.getElementById("wheel-chair"));
-
 function main() {
   stream.begin();
   joystick.begin();
-  wheelChair.begin();
   inputWebSocket.begin();
   tilt.begin();
   spotlight.begin();
 }
 
 function loop() {
-  updateFromUserInput();
-
-  inputWebSocket.send(
-    wheelChair.leftSpeed,
-    wheelChair.rightSpeed,
-  );
-}
-
-function updateFromUserInput() {
   const gamepad = navigator.getGamepads().filter(Boolean)[0];
 
   if (gamepad) {
-    wheelChair.move(...getSpeedFromGamepad(gamepad));
     tilt.move(...getCameraMovementFromGamepad(gamepad));
     spotlight.move(...getSpotlightIntensityFromGamepad(gamepad));
+    inputWebSocket.send(getInputFromGamepad(gamepad));
   } else {
-    wheelChair.move(...getSpeedFromJoystick(joystick));
+    inputWebSocket.send(getInputFromJoystick(joystick));
   }
 }
 
@@ -198,11 +185,7 @@ function getSpotlightIntensityFromGamepad(gamepad) {
   return [0];
 }
 
-function getSpeedFromJoystick(joystick) {
-  return convertAxesToSpeed(joystick.getX(), -joystick.getY());
-}
-
-function getSpeedFromGamepad(gamepad) {
+function getInputFromGamepad(gamepad) {
   let [leftStickX, leftStickY, rightStickX, rightStickY] = gamepad.axes.map(axis => Math.round(axis * 100));
 
   const [a, b, x, y, l1, r1, l2, r2, select, start, l3, r3, up, down, left, right] = gamepad.buttons;
@@ -223,18 +206,11 @@ function getSpeedFromGamepad(gamepad) {
     rightStickY = 100;
   }
 
-  return convertAxesToSpeed(leftStickX, rightStickY);
+  return [leftStickX, leftStickY, rightStickX, rightStickY];
 }
 
-function convertAxesToSpeed(x, y) {
-  return [
-    -y * (100 + Math.min(0, x)) / 100,
-    -y * (100 - Math.max(0, x)) / 100
-  ];
-}
-
-function ease(current, target, easing) {
-  return current + (target - current) * easing;
+function getInputFromJoystick(joystick) {
+  return [joystick.getX(), joystick.getY(), 0, 0];
 }
 
 function throttle(fn, waitTime) {

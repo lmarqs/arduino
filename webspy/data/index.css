@@ -103,16 +103,6 @@ label {
   margin: auto;
 }
 
-#wheel-chair>* {
-  display: block;
-  width: 100%;
-  height: 2em;
-  appearance: none;
-  background: #d3d3d3;
-  margin-bottom: 1em;
-  margin-top: 1em;
-}
-
 #tilt>* {
   display: block;
   width: 100%;
