@@ -1,118 +1,63 @@
 #include <Arduino.h>
 #include <Bluepad32.h>
+#include <Wire.h>
 #include <this_digital_pin.h>
 #include <this_esp_ledc_pin.h>
 #include <this_h_bridge.h>
 #include <this_pin.h>
 
+#include "./car.h"
+#include "./controller.h"
+
 DigitalOutPin led(2);
-
-EspLedcOutPin pwm1(21, 1, 5000, 12);
-DigitalOutPin in11(19);
-DigitalOutPin in21(18);
-FullHBridge motor1(&pwm1, &in11, &in21);
-
-EspLedcOutPin pwm2(4, 2, 5000, 12);
-DigitalOutPin in12(16);
-DigitalOutPin in22(17);
-FullHBridge motor2(&pwm2, &in12, &in22);
-
-EspLedcOutPin pwm3(13, 3, 5000, 12);
-DigitalOutPin in13(12);
-DigitalOutPin in23(14);
-FullHBridge motor3(&pwm3, &in13, &in23);
-
-EspLedcOutPin pwm4(33, 4, 5000, 12);
-DigitalOutPin in14(25);
-DigitalOutPin in24(26);
-FullHBridge motor4(&pwm4, &in14, &in24);
-
-FullHBridge motors[] = {
-    motor1,
-    motor2,
-    motor3,
-    motor4,
-};
-
-size_t motors_len = sizeof(motors) / sizeof(FullHBridge);
-
-int32_t *rotation = new int32_t[motors_len];
-int32_t *translation = new int32_t[motors_len];
-
+CarPilot pilot;
 Controller *controller = NULL;
 
-int32_t ignoreControllerAxisDeathZone(int32_t axisValue) {
-  int32_t deathZone = 62;
+void receiveEventHandler(int len) {
+  size_t size = 4 * sizeof(int32_t);
 
-  if (axisValue < deathZone && axisValue > -deathZone) {
-    return 0;
+  if (len != size) {
+    return;
   }
 
-  return axisValue;
+  int8_t buf[size];
+
+  int8_t i = -1;
+
+  while (++i < size && Wire.available()) {
+    buf[i] = Wire.read();
+  }
+
+  if (i != size) {
+    return;
+  }
+
+  int32_t *axis = (int32_t *)buf;
+
+  move(axis[0], axis[1], axis[2], axis[3]);
 }
 
-int32_t hardcapControllerAxisValue(int32_t axisValue) {
-  int32_t maxValue = 512;
+void move(int32_t axisLX, int32_t axisLY, int32_t axisRX, int32_t axisRY) {
+  axisLX = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(axisLX));
+  axisLY = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(axisLY));
+  axisRX = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(axisRX));
+  axisRY = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(axisRY));
 
-  if (axisValue > maxValue) {
-    return maxValue;
-  }
+  int32_t normalL = hardcapControllerAxisValue(sqrt((axisLX * axisLX) + (axisLY * axisLY)));
+  int32_t normalR = hardcapControllerAxisValue(sqrt((axisRX * axisRX) + (axisRY * axisRY)));
 
-  if (axisValue < -maxValue) {
-    return -maxValue;
-  }
+  pilot.calculateRotation(axisLX, axisLY, normalL);
 
-  return axisValue;
-}
+  pilot.calculateTranslation(axisRX, axisRY, normalR);
 
-uint32_t applySpeedCurve(int32_t speed, int32_t max) { return speed * speed / max + 2 * speed; }
-
-void translate(int32_t axisY, int32_t axisX, int32_t normal, int32_t speeds[]) {
-  if (axisY <= 0 && axisX >= 0) {
-    speeds[0] = speeds[2] = -axisY - axisX;
-    speeds[1] = speeds[3] = +normal;
-  }
-
-  if (axisY >= 0 && axisX >= 0) {
-    speeds[0] = speeds[2] = -normal;
-    speeds[1] = speeds[3] = -axisY + axisX;
-  }
-
-  if (axisY >= 0 && axisX <= 0) {
-    speeds[0] = speeds[2] = -axisY - axisX;
-    speeds[1] = speeds[3] = -normal;
-  }
-
-  if (axisY <= 0 && axisX <= 0) {
-    speeds[0] = speeds[2] = +normal;
-    speeds[1] = speeds[3] = -axisY + axisX;
-  }
-}
-
-void rotate(int32_t axisY, int32_t axisX, int32_t normal, int32_t *speeds) {
-  if (axisY <= 0 && axisX >= 0) {
-    speeds[0] = speeds[3] = +normal;
-    speeds[1] = speeds[2] = -axisY - axisX;
-  }
-
-  if (axisY >= 0 && axisX >= 0) {
-    speeds[0] = speeds[3] = -axisY + axisX;
-    speeds[1] = speeds[2] = -normal;
-  }
-
-  if (axisY >= 0 && axisX <= 0) {
-    speeds[0] = speeds[3] = -normal;
-    speeds[1] = speeds[2] = -axisY - axisX;
-  }
-
-  if (axisY <= 0 && axisX <= 0) {
-    speeds[0] = speeds[3] = -axisY + axisX;
-    speeds[1] = speeds[2] = +normal;
-  }
+  pilot.drive();
 }
 
 void setup() {
   Serial.begin(115200);
+
+  Wire.begin(0x01);
+  Wire.onReceive(receiveEventHandler);
 
   BP32.setup([controller](Controller *c) { controller = controller == NULL ? c : controller; },
              [controller](Controller *c) { controller = controller == c ? NULL : controller; });
@@ -122,45 +67,21 @@ void setup() {
 
   led.begin();
 
-  for (size_t i = 0; i < motors_len; i++) {
-    motors[i].begin();
-  }
+  pilot.begin();
 }
 
 void loop() {
   BP32.update();
 
-  if (!controller) {
-    motors->stop();
+  pilot.noSignal();
 
+  if (!controller) {
     led.write(LOW);
     delay(500);
     led.write(HIGH);
     delay(500);
-
     return;
   }
 
-  int32_t axisLY = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(controller->axisY()));
-  int32_t axisLX = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(controller->axisX()));
-  int32_t axisRY = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(controller->axisRY()));
-  int32_t axisRX = hardcapControllerAxisValue(ignoreControllerAxisDeathZone(controller->axisRX()));
-
-  int32_t normalL = hardcapControllerAxisValue(sqrt((axisLY * axisLY) + (axisLX * axisLX)));
-  int32_t normalR = hardcapControllerAxisValue(sqrt((axisRY * axisRY) + (axisRX * axisRX)));
-
-  rotate(axisLY, axisLX, normalL, rotation);
-  translate(axisRY, axisRX, normalR, translation);
-
-  for (size_t i = 0; i < motors_len; i++) {
-    int32_t speed = normalL + normalR ? (rotation[i] * normalL + translation[i] * normalR) / (normalL + normalR) : 0;
-
-    if (speed >= 0) {
-      uint32_t normal = map(+speed, 0, 512, 0, 0b110011001100);
-      motors[i].foward(normal);
-    } else {
-      uint32_t normal = map(-speed, 0, 512, 0, 0b110011001100);
-      motors[i].backward(normal);
-    }
-  }
+  move(controller->axisX(), controller->axisY(), controller->axisRX(), controller->axisRY());
 }
