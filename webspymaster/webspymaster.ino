@@ -9,7 +9,7 @@
 #include <Wire.h>
 #include <http_parser.h>
 #include <this_esp_camera.h>
-#include <this_esp_ledc.h>
+#include <this_esp_ledc_pin.h>
 #include <this_esp_web_server.h>
 
 #include "data/index.css.h"
@@ -19,8 +19,8 @@
 EspWebServer WebServer;
 EspWebServer StreamServer;
 EspCamera Camera;
-EspLedc Spotlight(4, 2, 5000., 10);
-EspLedc Tilt(12, 3, 50., 10);
+EspLedcOutPin Spotlight(4, 2, 5000., 10);
+EspLedcOutPin Tilt(12, 3, 50., 10);
 
 EspWebServerFrameHandler inputFrameHandler = [](httpd_ws_frame_t *frame) {
   Wire.beginTransmission(0x01);
