@@ -149,9 +149,9 @@ function loop() {
   if (gamepad) {
     tilt.move(...getCameraMovementFromGamepad(gamepad));
     spotlight.move(...getSpotlightIntensityFromGamepad(gamepad));
-    inputWebSocket.send(getInputFromGamepad(gamepad));
+    inputWebSocket.send(...getInputFromGamepad(gamepad));
   } else {
-    inputWebSocket.send(getInputFromJoystick(joystick));
+    inputWebSocket.send(...getInputFromJoystick(joystick));
   }
 }
 
@@ -186,7 +186,7 @@ function getSpotlightIntensityFromGamepad(gamepad) {
 }
 
 function getInputFromGamepad(gamepad) {
-  let [leftStickX, leftStickY, rightStickX, rightStickY] = gamepad.axes.map(axis => Math.round(axis * 100));
+  let [leftStickX, leftStickY, rightStickX, rightStickY] = gamepad.axes.map(axis => Math.floor(axis * 512));
 
   const [a, b, x, y, l1, r1, l2, r2, select, start, l3, r3, up, down, left, right] = gamepad.buttons;
 
@@ -210,7 +210,7 @@ function getInputFromGamepad(gamepad) {
 }
 
 function getInputFromJoystick(joystick) {
-  return [joystick.getX(), joystick.getY(), 0, 0];
+  return [joystick.getX(), joystick.getY(), 0, 0].map(axis => Math.floor(-axis * 512 / 100));
 }
 
 function throttle(fn, waitTime) {
