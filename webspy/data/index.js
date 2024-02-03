@@ -210,7 +210,7 @@ function getInputFromGamepad(gamepad) {
 }
 
 function getInputFromJoystick(joystick) {
-  return [joystick.getX(), joystick.getY(), 0, 0].map(axis => Math.floor(-axis * 512 / 100));
+  return [joystick.getX(), -joystick.getY(), 0, 0].map(axis => Math.floor(axis * 512 / 100));
 }
 
 function throttle(fn, waitTime) {
