@@ -191,19 +191,19 @@ function getInputFromGamepad(gamepad) {
   const [a, b, x, y, l1, r1, l2, r2, select, start, l3, r3, up, down, left, right] = gamepad.buttons;
 
   if (l1.pressed) {
-    return [-80, 80];
+    return [-410, 410];
   }
 
   if (r1.pressed) {
-    return [80, -80];
+    return [410, -410];
   }
 
   if (a.pressed) {
-    rightStickY = -100;
+    rightStickY = -512;
   }
 
   if (b.pressed) {
-    rightStickY = 100;
+    rightStickY = 512;
   }
 
   return [leftStickX, leftStickY, rightStickX, rightStickY];
