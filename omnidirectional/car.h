@@ -3,7 +3,7 @@
 #include <this_esp_ledc_pin.h>
 #include <this_h_bridge.h>
 
-EspLedcOutPin pwm1(02, 1, 5000, 12);
+EspLedcOutPin pwm1(15, 1, 5000, 12);
 DigitalOutPin in11(04);
 DigitalOutPin in21(16);
 FullHBridge motor1(&pwm1, &in11, &in21);

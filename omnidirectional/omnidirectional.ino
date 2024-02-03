@@ -14,6 +14,10 @@ CarPilot pilot;
 Controller *controller = NULL;
 
 void receiveEventHandler(int len) {
+  if (controller) {
+    return;
+  }
+
   size_t size = 4 * sizeof(int32_t);
 
   if (len != size) {
