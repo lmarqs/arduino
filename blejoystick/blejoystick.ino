@@ -7,16 +7,6 @@
 #define SERVICE_UUID "2ab61dc3-ef26-4d92-aa2c-ec180a167047"
 #define CHARACTERISTIC_UUID "b1af0278-69ab-4a0f-bbd0-811ce0947198"
 
-BLECharacteristic *userInput;
-
-int16_t ignoreDeathZone(int16_t value, int16_t threshold) {
-  if (value > -threshold && value < threshold) {
-    return 0;
-  }
-
-  return value;
-}
-
 class {
  private:
   bool button = false;
@@ -41,6 +31,20 @@ class {
   }
 } joystick;
 
+int16_t ignoreDeathZone(int16_t value, int16_t threshold) {
+  if (value > -threshold && value < threshold) {
+    return 0;
+  }
+
+  return value;
+}
+
+BLECharacteristic *userInput;
+
+size_t input_size = sizeof(uint16_t);
+uint8_t *inputs;
+size_t inputs_len = 3 * input_size;
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting...");
@@ -62,24 +66,19 @@ void setup() {
 
   BLEDevice::startAdvertising();
 
+  inputs = (uint8_t *)calloc(1, inputs_len);
+
   Serial.println("Ready!");
 }
 
 void loop() {
   joystick.read();
 
-  bool button = joystick.getButton();
-  int16_t x = ignoreDeathZone(joystick.getX(), 520);
-  int16_t y = ignoreDeathZone(joystick.getY(), 700);
+  inputs[0 * input_size] = joystick.getButton();
+  inputs[1 * input_size] = ignoreDeathZone(joystick.getX(), 520);
+  inputs[2 * input_size] = ignoreDeathZone(joystick.getY(), 700);
 
-  int8_t speedL = map((2048 + min((int16_t)0, x)) / 2048 * y, -2048, 2047, -100, 100);
-  int8_t speedR = map((2048 - max((int16_t)0, x)) / 2048 * y, -2048, 2047, -100, 100);
-
-  Serial.printf("%d\t%d\t%d\t%d\t%d\n", button, x, y, speedL, speedR);
-
-  uint8_t data[] = {button, speedL, speedR};
-
-  userInput->setValue(data, 3);
+  userInput->setValue(inputs, inputs_len);
   userInput->notify();
   delay(50);
 }
