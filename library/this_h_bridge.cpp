@@ -59,15 +59,15 @@ void HalfHBridge::begin() {
 void HalfHBridge::foward(int32_t value) {
   HBridge::signal();
 
-  in1->write(LOW);
+  in1->write(value);
   in2->write(LOW);
 }
 
 void HalfHBridge::backward(int32_t value) {
   HBridge::signal();
 
-  in1->write(value);
-  in2->write(LOW);
+  in1->write(LOW);
+  in2->write(value);
 }
 
 void HalfHBridge::stop() {
