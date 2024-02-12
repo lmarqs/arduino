@@ -1,39 +1,72 @@
 #include <Arduino.h>
 #include <BLEDevice.h>
-#include <this_wheelchair.h>
+#include <this_esp_ledc_pin.h>
+#include <this_h_bridge.h>
 
-static BLEUUID serviceUUID("2ab61dc3-ef26-4d92-aa2c-ec180a167047");
-static BLEUUID userInputUUID("b1af0278-69ab-4a0f-bbd0-811ce0947198");
+DigitalOutPin led(4);
 
-static boolean doConnect = false;
-static BLERemoteCharacteristic* userInput;
-static BLEAdvertisedDevice* serverDevice;
+EspLedcOutPin in1(5, 1, 5000, 12);
+EspLedcOutPin in2(6, 2, 5000, 12);
+EspLedcOutPin in3(8, 3, 5000, 12);
+EspLedcOutPin in4(7, 4, 5000, 12);
 
-HalfBridgeWheelChair motors(0,1,2,3);
+HalfHBridge motor1(&in1, &in2);
+HalfHBridge motor2(&in3, &in4);
 
-static void handleUserInput(BLERemoteCharacteristic* c, uint8_t* data, size_t length, bool isNotify) {
-  // Serial.print("Notify callback for characteristic ");
-  // Serial.print(c->getUUID().toString().c_str());
-  // Serial.print(" of data length ");
-  // Serial.println(length);
-  // Serial.printf("data: ");
-  // for (int i = 0; i < length; i++) {
-  //   Serial.printf("%d ", (int8_t)data[i]);
-  // }
-  // Serial.println();
+BLEUUID serviceUUID("2ab61dc3-ef26-4d92-aa2c-ec180a167047");
+BLEUUID userInputUUID("b1af0278-69ab-4a0f-bbd0-811ce0947198");
 
-  bool button = data[0];
-  int8_t speedL = data[1];
-  int8_t speedR = data[2];
+boolean doConnect = false;
+boolean connected = false;
 
-  motors.move(speedL, speedR);
+BLERemoteCharacteristic* userInput;
+BLEAdvertisedDevice* serverDevice;
+
+void handleUserInput(BLERemoteCharacteristic* c, uint8_t* data, size_t length, bool isNotify) {
+  int8_t axisX = map(data[0], 0, 0xFF, -128, 127);
+  int8_t axisY = map(data[1], 0, 0xFF, -128, 127);
+  bool button = map(data[2], 0, 0xFF, true, false);
+
+  int8_t normal = constrain(sqrt((axisX * axisX) + (axisY * axisY)), 0, 127);
+
+  int8_t speed1 = 0;
+  int8_t speed2 = 0;
+
+  if (axisX >= 0 && axisY <= 0) {
+    speed1 = -axisY - axisX;
+    speed2 = +normal;
+  }
+
+  if (axisX >= 0 && axisY >= 0) {
+    speed1 = -normal;
+    speed2 = -axisY + axisX;
+  }
+
+  if (axisX <= 0 && axisY >= 0) {
+    speed1 = -axisY - axisX;
+    speed2 = -normal;
+  }
+
+  if (axisX <= 0 && axisY <= 0) {
+    speed1 = +normal;
+    speed2 = -axisY + axisX;
+  }
+
+  int32_t maxSpeed = 127;
+  int32_t maxMotorsValue = 0b110011001100;
+
+  if (speed1 > 0) {
+    motor1.backward(map(speed1, 0, maxSpeed, 0, maxMotorsValue));
+  } else {
+    motor1.forward(map(-speed1, 0, maxSpeed, 0, maxMotorsValue));
+  }
+
+  if (speed2 > 0) {
+    motor2.backward(map(speed2, 0, maxSpeed, 0, maxMotorsValue));
+  } else {
+    motor2.forward(map(-speed2, 0, maxSpeed, 0, maxMotorsValue));
+  }
 }
-
-class ClientCallbacks : public BLEClientCallbacks {
-  void onConnect(BLEClient* pclient) {}
-
-  void onDisconnect(BLEClient* pclient) { Serial.println("onDisconnect"); }
-};
 
 bool connectToServer() {
   Serial.print("Forming a connection to ");
@@ -41,8 +74,6 @@ bool connectToServer() {
 
   BLEClient* client = BLEDevice::createClient();
   Serial.println(" - Created client");
-
-  client->setClientCallbacks(new ClientCallbacks());
 
   client->connect(serverDevice);
 
@@ -95,8 +126,8 @@ void setup() {
 
   Serial.println("Starting...");
 
-  pinMode(4, OUTPUT);
-  digitalWrite(4, LOW);
+  motor1.begin();
+  motor2.begin();
 
   BLEDevice::init("");
 
@@ -108,13 +139,21 @@ void setup() {
   scan->setActiveScan(true);
   scan->start(5, false);
 
-  motors.begin();
-
-  Serial.println("Ready!");
+  Serial.printf("\nReady!\n");
 }
 
 void loop() {
-  if (doConnect == true) {
+  motor1.noSignal();
+  motor2.noSignal();
+
+  // if (!connected) {
+  //   led.write(LOW);
+  //   delay(500);
+  //   led.write(HIGH);
+  //   delay(500);
+  // }
+
+  if (doConnect) {
     if (connectToServer()) {
       Serial.println("We are now connected to the BLE Server.");
     } else {
@@ -122,8 +161,6 @@ void loop() {
     }
     doConnect = false;
   }
-
-  // motors.noSignal();
 
   delay(100);
 }
