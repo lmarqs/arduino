@@ -1,5 +1,11 @@
 # arduino
 
+## Dependencies
+- make
+- gcc
+- arduino-cli
+- python 3.10
+
 ## Setup
 
 ```
