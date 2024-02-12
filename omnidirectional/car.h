@@ -133,7 +133,7 @@ class CarPilot {
 
       if (speed >= 0) {
         uint32_t normal = map(+speed, 0, maxSpeed, 0, maxMotorsValue);
-        motors[i].foward(normal);
+        motors[i].forward(normal);
       } else {
         uint32_t normal = map(-speed, 0, maxSpeed, 0, maxMotorsValue);
         motors[i].backward(normal);

@@ -15,7 +15,7 @@ class HBridge {
  public:
   void noSignal(uint8_t whenToStop = 10);
   virtual void stop();
-  virtual void foward(int32_t value);
+  virtual void forward(int32_t value);
   virtual void backward(int32_t value);
 };
 
@@ -27,7 +27,7 @@ class FullHBridge : public HBridge {
   FullHBridge(OutPin* pwm, OutPin* in1, OutPin* in2);
   void begin();
   void stop();
-  void foward(int32_t value);
+  void forward(int32_t value);
   void backward(int32_t value);
 };
 
@@ -39,6 +39,6 @@ class HalfHBridge : public HBridge {
   HalfHBridge(OutPin* in1, OutPin* in2);
   void begin();
   void stop();
-  void foward(int32_t value);
+  void forward(int32_t value);
   void backward(int32_t value);
 };

@@ -22,7 +22,7 @@ void FullHBridge::begin() {
   in2->begin();
 }
 
-void FullHBridge::foward(int32_t value) {
+void FullHBridge::forward(int32_t value) {
   HBridge::signal();
 
   in1->write(HIGH);
@@ -56,7 +56,7 @@ void HalfHBridge::begin() {
   in2->begin();
 }
 
-void HalfHBridge::foward(int32_t value) {
+void HalfHBridge::forward(int32_t value) {
   HBridge::signal();
 
   in1->write(value);
