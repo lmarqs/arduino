@@ -1,3 +1,4 @@
+#ifdef ESP32
 #include <Arduino.h>
 #include <esp_camera.h>
 
@@ -73,3 +74,4 @@ sensor_t *esp_camera_setup() {
 
   return sensor;
 }
+#endif

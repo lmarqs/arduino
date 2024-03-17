@@ -1,5 +1,6 @@
 #include "this_esp_camera.h"
 
+#ifdef ESP32
 #include <Arduino.h>
 #include <esp_camera.h>
 
@@ -21,3 +22,4 @@ void EspCamera::capture(EspCameraPictureReader reader) {
 
   fb = NULL;
 }
+#endif

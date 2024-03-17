@@ -1,5 +1,6 @@
 #include "this_esp_web_server.h"
 
+#ifdef ESP32
 #include <Arduino.h>
 #include <FS.h>
 #include <esp_http_server.h>
@@ -198,3 +199,4 @@ void EspWebServer::on(char *uri, httpd_method_t method, EspWebServerHandler hand
 
   httpd_register_uri_handler(httpd, &config);
 }
+#endif

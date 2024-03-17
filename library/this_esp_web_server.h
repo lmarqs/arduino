@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef ESP32
 #include <Arduino.h>
 #include <FS.h>
 #define CONFIG_HTTPD_WS_SUPPORT
@@ -70,3 +71,4 @@ class EspWebServer {
 
   void on(char *uri, httpd_method_t method, EspWebServerHandler handler);
 };
+#endif

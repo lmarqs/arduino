@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef ESP32
 #include <Arduino.h>
 #include <esp_camera.h>
 
@@ -13,3 +14,4 @@ class EspCamera {
   void begin();
   void capture(EspCameraPictureReader reader);
 };
+#endif

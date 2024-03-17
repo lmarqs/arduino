@@ -1,3 +1,4 @@
+#ifdef ESP32
 #include <Arduino.h>
 #include <esp32-hal-ledc.h>
 
@@ -19,3 +20,4 @@ void EspLedcOutPin::begin() {
 }
 
 void EspLedcOutPin::write(uint32_t duty) { ledcWrite(channel, duty); }
+#endif
