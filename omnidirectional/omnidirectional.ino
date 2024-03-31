@@ -58,7 +58,7 @@ void move(int32_t axisLX, int32_t axisLY, int32_t axisRX, int32_t axisRY) {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   Wire.begin(0x01);
   Wire.onReceive(receiveEventHandler);
