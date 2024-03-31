@@ -27,6 +27,7 @@ hexdump:
 	fi
 
 compile: hexdump
+	rm -rf .build/$(SKETCH)
 	arduino-cli compile $(SKETCH) --build-path .build/$(SKETCH) --fqbn $(FBQN) --library library --config-file arduino-cli.yaml
 
 filesystem.spiffs:
