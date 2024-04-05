@@ -38,13 +38,13 @@ void loop() {
       }
 
       if (IrReceiver.decodedIRData.command == CONTROLLER_COMMAND_LEFT) {
-        left.forward(255);
-        right.backward(255);
+        left.backward(255);
+        right.forward(255);
       }
 
       if (IrReceiver.decodedIRData.command == CONTROLLER_COMMAND_RIGHT) {
-        left.backward(255);
-        right.forward(255);
+        left.forward(255);
+        right.backward(255);
       }
     }
 
