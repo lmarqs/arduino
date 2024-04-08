@@ -1,14 +1,17 @@
 #include <Arduino.h>
 #include <BLEDevice.h>
-#include <this_esp_ledc_pin.h>
+#include <this_analog_pin.h>
+#include <this_digital_pin.h>
 #include <this_h_bridge.h>
 
-DigitalOutPin led(4);
+DigitalOutPin led(8);
 
-EspLedcOutPin in1(5, 1, 5000, 12);
-EspLedcOutPin in2(6, 2, 5000, 12);
-EspLedcOutPin in3(8, 3, 5000, 12);
-EspLedcOutPin in4(7, 4, 5000, 12);
+AnalogOutPin in1(1);
+AnalogOutPin in2(2);
+AnalogOutPin in3(4);
+AnalogOutPin in4(3);
+
+#define SPEED_MAX_VALUE 0x7F
 
 HalfHBridge motor1(&in1, &in2);
 HalfHBridge motor2(&in3, &in4);
@@ -22,50 +25,31 @@ boolean connected = false;
 BLERemoteCharacteristic* userInput;
 BLEAdvertisedDevice* serverDevice;
 
+int32_t ignoreControllerAxisDeathZone(int32_t axisValue, int32_t min, int32_t max) {
+  if (axisValue < min || axisValue > max) {
+    return axisValue;
+  }
+
+  return 0x800;
+}
+
 void handleUserInput(BLERemoteCharacteristic* c, uint8_t* data, size_t length, bool isNotify) {
-  int8_t axisX = map(data[0], 0, 0xFF, -128, 127);
-  int8_t axisY = map(data[1], 0, 0xFF, -128, 127);
-  bool button = map(data[2], 0, 0xFF, true, false);
+  uint32_t* input = (uint32_t*)data;
 
-  int8_t normal = constrain(sqrt((axisX * axisX) + (axisY * axisY)), 0, 127);
+  // Serial.printf("input[0]:\t%d, input[1]:\t%d, input[2]:\t%d\n", input[0], input[1], input[2]);
 
-  int8_t speed1 = 0;
-  int8_t speed2 = 0;
+  int axisX = map(ignoreControllerAxisDeathZone(input[0], 1600, 2200), 0, 0xFFF, -SPEED_MAX_VALUE, SPEED_MAX_VALUE);
+  int axisY = map(ignoreControllerAxisDeathZone(input[1], 1500, 2100), 0, 0xFFF, -SPEED_MAX_VALUE, SPEED_MAX_VALUE);
+  // Serial.printf("axisX:\t%d, axisY:\t%d\n", axisX, axisY);
 
-  if (axisX >= 0 && axisY <= 0) {
-    speed1 = -axisY - axisX;
-    speed2 = +normal;
-  }
+  int8_t speed1 = constrain(axisY + min(axisX, 0), -SPEED_MAX_VALUE, SPEED_MAX_VALUE);
+  int8_t speed2 = constrain(axisY - max(axisX, 0), -SPEED_MAX_VALUE, SPEED_MAX_VALUE);
+  // Serial.printf("speed1:\t%d, speed2:\t%d\n", speed1, speed2);
 
-  if (axisX >= 0 && axisY >= 0) {
-    speed1 = -normal;
-    speed2 = -axisY + axisX;
-  }
+  motor1.move(speed1);
+  motor2.move(speed2);
 
-  if (axisX <= 0 && axisY >= 0) {
-    speed1 = -axisY - axisX;
-    speed2 = -normal;
-  }
-
-  if (axisX <= 0 && axisY <= 0) {
-    speed1 = +normal;
-    speed2 = -axisY + axisX;
-  }
-
-  int32_t maxSpeed = 127;
-  int32_t maxMotorsValue = 0b110011001100;
-
-  if (speed1 > 0) {
-    motor1.backward(map(speed1, 0, maxSpeed, 0, maxMotorsValue));
-  } else {
-    motor1.forward(map(-speed1, 0, maxSpeed, 0, maxMotorsValue));
-  }
-
-  if (speed2 > 0) {
-    motor2.backward(map(speed2, 0, maxSpeed, 0, maxMotorsValue));
-  } else {
-    motor2.forward(map(-speed2, 0, maxSpeed, 0, maxMotorsValue));
-  }
+  delay(50);
 }
 
 bool connectToServer() {
@@ -121,10 +105,22 @@ class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   }
 };
 
+void blink(uint8_t times = 3, uint8_t delayMs = 150) {
+  while (times > 0) {
+    times--;
+    led.write(HIGH);
+    delay(delayMs);
+    led.write(LOW);
+    delay(delayMs);
+  }
+}
+
 void setup() {
   Serial.begin(9600);
 
   Serial.println("Starting...");
+
+  led.begin();
 
   motor1.begin();
   motor2.begin();
@@ -146,12 +142,10 @@ void loop() {
   motor1.noSignal();
   motor2.noSignal();
 
-  // if (!connected) {
-  //   led.write(LOW);
-  //   delay(500);
-  //   led.write(HIGH);
-  //   delay(500);
-  // }
+  if (!connected) {
+    blink(3);
+    delay(250);
+  }
 
   if (doConnect) {
     if (connectToServer()) {
