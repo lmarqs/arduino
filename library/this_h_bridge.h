@@ -14,6 +14,7 @@ class HBridge {
 
  public:
   void noSignal(uint8_t whenToStop = 10);
+  void move(int32_t value);
   virtual void stop();
   virtual void forward(int32_t value);
   virtual void backward(int32_t value);

@@ -10,6 +10,16 @@ void HBridge::noSignal(uint8_t whenToStop) {
 
 void HBridge::signal() { noSignalCount = 0; }
 
+void HBridge::move(int32_t value) {
+  if (value > 0) {
+    forward(value);
+  } else if (value < 0) {
+    backward(-value);
+  } else {
+    stop();
+  }
+}
+
 FullHBridge::FullHBridge(OutPin* pwm, OutPin* in1, OutPin* in2) {
   this->pwm = pwm;
   this->in1 = in1;
