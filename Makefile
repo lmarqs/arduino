@@ -14,7 +14,7 @@ install-dependencies:
 	arduino-cli lib install IRremote@4.2.0 --config-file arduino-cli.yaml
 	arduino-cli lib install LiquidCrystal@1.0.7 --config-file arduino-cli.yaml
 	arduino-cli lib install Servo@1.2.1 --config-file arduino-cli.yaml
-	arduino-cli lib install WiFiManager@2.0.16-rc.2 --config-file arduino-cli.yaml
+	arduino-cli lib install RF24@1.4.8 --config-file arduino-cli.yaml
 
 run: compile upload monitor
 
