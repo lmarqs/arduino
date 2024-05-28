@@ -15,6 +15,7 @@ install-dependencies:
 	arduino-cli lib install LiquidCrystal@1.0.7 --config-file arduino-cli.yaml
 	arduino-cli lib install Servo@1.2.1 --config-file arduino-cli.yaml
 	arduino-cli lib install RF24@1.4.8 --config-file arduino-cli.yaml
+	arduino-cli lib install BTLE@1.0.0 --config-file arduino-cli.yaml
 
 run: compile upload monitor
 
@@ -41,7 +42,7 @@ upload:
 
 monitor:
 	sudo chmod a+rw $(PORT)
-	arduino-cli monitor --config baudrate=9600 --fqbn $(FBQN) --port $(PORT) --config-file arduino-cli.yaml
+	arduino-cli monitor --config baudrate=115200 --fqbn $(FBQN) --port $(PORT) --config-file arduino-cli.yaml
 
 monitor-describe:
 	sudo chmod a+rw $(PORT)
