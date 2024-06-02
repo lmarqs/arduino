@@ -8,6 +8,6 @@ library:
   enable_unsafe_install: true
 
 directories:
-  data: .arduino15/data
-  downloads: .arduino15/downloads
-  user: .arduino15/user
+  data: .arduino/data
+  downloads: .arduino/downloads
+  user: .arduino/user
