@@ -11,11 +11,12 @@ install-dependencies:
 	arduino-cli core install esp32:esp32@2.0.14 --config-file arduino-cli.yaml
 	# arduino-cli lib install 'RoboCore - Vespa@1.1.0' --config-file arduino-cli.yaml
 	# arduino-cli lib install ESP32Servo@1.1.1 --config-file arduino-cli.yaml
-	arduino-cli lib install IRremote@4.2.0 --config-file arduino-cli.yaml
+	arduino-cli lib install IRremote@4.3.1 --config-file arduino-cli.yaml
 	arduino-cli lib install LiquidCrystal@1.0.7 --config-file arduino-cli.yaml
 	arduino-cli lib install Servo@1.2.1 --config-file arduino-cli.yaml
 	arduino-cli lib install RF24@1.4.8 --config-file arduino-cli.yaml
 	arduino-cli lib install BTLE@1.0.0 --config-file arduino-cli.yaml
+	arduino-cli lib install 'Adafruit BusIO@1.16.1' --config-file arduino-cli.yaml
 	arduino-cli lib install 'Adafruit GFX Library@1.11.9' --config-file arduino-cli.yaml
 	arduino-cli lib install 'Adafruit SSD1306@2.5.10' --config-file arduino-cli.yaml
 
