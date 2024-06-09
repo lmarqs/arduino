@@ -53,7 +53,7 @@ monitor-describe:
 
 clean:
 	rm -rf .build
-	rm -rf .arduino15
+	rm -rf .arduino
 
 config-dump:
 	arduino-cli config dump
